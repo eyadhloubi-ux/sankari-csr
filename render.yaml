@@ -1,0 +1,12 @@
+# Render Blueprint: خادم واحد (Docker) + قاعدة بيانات خارجية عبر DATABASE_URL
+services:
+  - type: web
+    name: sankari-csr
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: DATABASE_URL
+        sync: false          # الصق رابط قاعدة البيانات (Neon) من لوحة Render
+      - key: SESSION_SECRET
+        generateValue: true  # مفتاح الجلسات يُولَّد تلقائياً

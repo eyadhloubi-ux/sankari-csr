@@ -110,7 +110,7 @@ async function serveStatic(req, res) {
   try {
     const b = await fsp.readFile(f);
     const ext = path.extname(f);
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
+    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': ['.html', '.js', '.css'].includes(ext) ? 'no-cache' : 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
     res.end(b);
   } catch (e) { res.writeHead(404); res.end('Not found') }
 }

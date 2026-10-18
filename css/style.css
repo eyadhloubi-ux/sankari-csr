@@ -1174,4 +1174,21 @@ body.is-drag{user-select:none;-webkit-user-select:none;cursor:grabbing}
 }
 .dh{user-select:none;-webkit-user-select:none}
 
+
+/* v11 */
+.subadd{align-items:center}
+.subadd .fi{flex:1;min-width:0}
+.subadd .btn{flex:none;height:34px}
+.subadd .btn svg{width:14px;height:14px}
+.tk.pend{background:var(--vio-soft);border:1px dashed color-mix(in srgb,var(--vio) 40%,transparent)}
+.pnote{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--vio)}
+.pnote svg{width:12px;height:12px}
+.tkok{display:inline-flex;gap:4px;flex:none}
+.tkok .btn{height:28px;padding:0 10px;font-size:12px}
+.tkok .btn svg{width:13px;height:13px}
+.rt-c.p{background:var(--vio-soft);color:var(--vio)}
+.tkadd.mg{grid-template-columns:minmax(0,1fr) 150px auto}
+.dh{cursor:grab}
+.dragging{transition:none!important;animation:none!important}
+@media (max-width:600px){.tkadd.mg{grid-template-columns:minmax(0,1fr) auto}.tkadd.mg .fi[name=t]{grid-column:1/-1}.tk .tkok{margin-inline-start:auto}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}

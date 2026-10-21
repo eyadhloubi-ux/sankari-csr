@@ -1065,7 +1065,12 @@ async function boot(){
     const ss=sess();prefs.user=null;
     if(ss&&ss.token){SRV.token=ss.token;prefs.user=ss.uid;if(!(await loadData())){SRV.token=null;setSess(null);prefs.user=null}}
     if(!SRV.token)data=blankData();
-    setInterval(pull,15000);window.addEventListener('focus',pull);document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
+    /* التحديث كل 15ث فقط والصفحة ظاهرة وفيها نشاط خلال آخر 10 دقائق؛ الصفحة المنسية تتوقف فينام خادم Render (الخطة المجانية) ويعود التحديث فور أول لمسة */
+    const IDLE_MS=10*60*1000;let lastAct=Date.now();
+    const wake=()=>{const was=Date.now()-lastAct>IDLE_MS;lastAct=Date.now();if(was&&!document.hidden)pull()};
+    ['pointerdown','pointermove','keydown','wheel','touchstart'].forEach(t=>window.addEventListener(t,wake,{passive:true,capture:true}));
+    setInterval(()=>{if(!document.hidden&&Date.now()-lastAct<IDLE_MS)pull()},15000);
+    window.addEventListener('focus',()=>{lastAct=Date.now();pull()});document.addEventListener('visibilitychange',()=>{if(!document.hidden){lastAct=Date.now();pull()}});
   }
   routeFromHash();render();
   if(SRV.migrated)setTimeout(()=>toast('نُقلت بياناتك من هذا الجهاز إلى قاعدة البيانات، وصارت مشتركة للجميع'),400);

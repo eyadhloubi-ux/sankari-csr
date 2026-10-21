@@ -3,12 +3,15 @@
  * منصة لجنة المسؤولية المجتمعية - الخادم
  * يخدّم ملفات الموقع ويحفظ البيانات في مكان واحد مشترك لكل المستخدمين.
  * التخزين: Postgres إذا وُجد DATABASE_URL، وإلا ملف JSON داخل DATA_DIR.
+ * الاستهلاك: الملفات الثابتة تُقرأ وتُضغط مرة واحدة عند التشغيل وتُخدَّم بـETag (304)،
+ * وردود JSON تُضغط gzip، والنسخة الاحتياطية تُكتب مرة كل ساعة على الأكثر وتُحذف بعد 30 يوماً.
  */
 const http = require('http');
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
 const crypto = require('crypto');
+const zlib = require('zlib');
 
 const PORT = Number(process.env.PORT) || 10000;
 const ROOT = __dirname;
@@ -17,6 +20,8 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const TOKEN_DAYS = 30;
 const MAX_BODY = 25 * 1024 * 1024;
+const BACKUP_EVERY_MS = 60 * 60 * 1000;
+const BACKUP_KEEP_DAYS = 30;
 
 /* ---------- كلمات المرور ---------- */
 const normD = s => String(s == null ? '' : s)
@@ -48,18 +53,30 @@ async function makeStore() {
   if (process.env.DATABASE_URL) {
     const { Pool } = require('pg');
     const local = /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL);
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: local ? false : { rejectUnauthorized: false } });
+    // اتصالات قليلة تُغلق بعد 10 ثوانٍ من الخمول حتى ينام Neon (scale to zero) بين الحفظات
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: local ? false : { rejectUnauthorized: false }, max: 3, idleTimeoutMillis: 10000, connectionTimeoutMillis: 15000 });
+    // Neon يقطع الاتصالات الخاملة حين ينام؛ بلا هذا المعالج يسقط الخادم كله
+    pool.on('error', e => console.warn('pg idle client error:', e.message));
     await pool.query(`CREATE TABLE IF NOT EXISTS csr_store (id TEXT PRIMARY KEY, rev INTEGER NOT NULL, doc JSONB NOT NULL, updated_at TIMESTAMPTZ DEFAULT now());
       CREATE TABLE IF NOT EXISTS csr_backup (day DATE PRIMARY KEY, doc JSONB NOT NULL, updated_at TIMESTAMPTZ DEFAULT now());`);
+    let lastBackup = 0, lastPrune = '';
     return {
       kind: 'postgres',
+      pool,
       async load() { const r = await pool.query('SELECT rev, doc FROM csr_store WHERE id=$1', ['main']); return r.rows[0] ? { rev: r.rows[0].rev, doc: r.rows[0].doc } : null },
       async save(rev, doc) {
         const j = JSON.stringify(doc);
         await pool.query(`INSERT INTO csr_store (id, rev, doc, updated_at) VALUES ('main', $1, $2::jsonb, now())
           ON CONFLICT (id) DO UPDATE SET rev=EXCLUDED.rev, doc=EXCLUDED.doc, updated_at=now()`, [rev, j]);
-        await pool.query(`INSERT INTO csr_backup (day, doc, updated_at) VALUES (current_date, $1::jsonb, now())
-          ON CONFLICT (day) DO UPDATE SET doc=EXCLUDED.doc, updated_at=now()`, [j]);
+        // النسخة اليومية: مرة كل ساعة على الأكثر بدل كل حفظ (كل حفظ كان يرسل المستند كاملاً مرتين)
+        const now = Date.now(), today = new Date(now).toISOString().slice(0, 10);
+        if (now - lastBackup < BACKUP_EVERY_MS && today === new Date(lastBackup).toISOString().slice(0, 10)) return;
+        lastBackup = now;
+        try {
+          await pool.query(`INSERT INTO csr_backup (day, doc, updated_at) VALUES (current_date, $1::jsonb, now())
+            ON CONFLICT (day) DO UPDATE SET doc=EXCLUDED.doc, updated_at=now()`, [j]);
+          if (lastPrune !== today) { lastPrune = today; await pool.query(`DELETE FROM csr_backup WHERE day < current_date - $1::int`, [BACKUP_KEEP_DAYS]) }
+        } catch (e) { console.warn('backup failed:', e.message) }
       }
     };
   }
@@ -87,9 +104,14 @@ async function putState(doc) { const rev = ((state && state.rev) || 0) + 1; awai
 const strip = doc => Object.assign({}, doc, { users: (doc.users || []).map(u => { const c = Object.assign({}, u); delete c.pw; return c }) });
 
 /* ---------- أدوات HTTP ---------- */
+const gzipOk = req => /\bgzip\b/.test(req.headers['accept-encoding'] || '');
 function send(res, code, obj) {
-  const b = Buffer.from(JSON.stringify(obj));
-  res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': b.length, 'Cache-Control': 'no-store' });
+  let b = Buffer.from(JSON.stringify(obj));
+  const h = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Vary': 'Accept-Encoding' };
+  // المستند الكامل (مع الصور) هو أثقل ما يخرج من الخادم؛ الضغط يقلّصه عدة أضعاف
+  if (b.length > 1024 && res.req && gzipOk(res.req)) { b = zlib.gzipSync(b, { level: 6 }); h['Content-Encoding'] = 'gzip' }
+  h['Content-Length'] = b.length;
+  res.writeHead(code, h);
   res.end(b);
 }
 function readBody(req) {
@@ -101,18 +123,35 @@ function readBody(req) {
   });
 }
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
-async function serveStatic(req, res) {
-  let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+const ZIP_EXT = ['.html', '.css', '.js', '.svg', '.json', '.webmanifest'];
+
+// الملفات الثابتة في الذاكرة: تُقرأ وتُضغط مرة واحدة، ولكل ملف ETag
+const files = new Map();
+async function loadStatic() {
+  const walk = async rel => {
+    const abs = path.join(ROOT, rel);
+    let st; try { st = await fsp.stat(abs) } catch (e) { return }
+    if (st.isDirectory()) { for (const n of await fsp.readdir(abs)) await walk(rel + '/' + n); return }
+    const body = await fsp.readFile(abs), ext = path.extname(abs);
+    files.set(rel, { body, gz: ZIP_EXT.includes(ext) ? zlib.gzipSync(body, { level: 9 }) : null, type: MIME[ext] || 'application/octet-stream', etag: '"' + crypto.createHash('sha1').update(body).digest('base64url').slice(0, 20) + '"' });
+  };
+  for (const x of PUBLIC) await walk(x.replace(/\/$/, ''));
+}
+function serveStatic(req, res) {
+  const u = new URL(req.url, 'http://x');
+  let p; try { p = decodeURIComponent(u.pathname) } catch (e) { p = '/' }
   if (p === '/' || !PUBLIC.some(x => p === x || (x.endsWith('/') && p.startsWith(x)))) p = '/index.html';
-  let f = path.normalize(path.join(ROOT, p));
-  if (!f.startsWith(ROOT + path.sep)) { res.writeHead(403); return res.end() }
-  try { const st = await fsp.stat(f); if (!st.isFile()) f = path.join(ROOT, 'index.html') } catch (e) { f = path.join(ROOT, 'index.html') }
-  try {
-    const b = await fsp.readFile(f);
-    const ext = path.extname(f);
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': ['.html', '.js', '.css'].includes(ext) ? 'no-cache' : 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
-    res.end(b);
-  } catch (e) { res.writeHead(404); res.end('Not found') }
+  let f = files.get(p);
+  if (!f) { if (p.startsWith('/index.html') || !path.extname(p)) f = files.get('/index.html'); else { res.writeHead(404); return res.end('Not found') } }
+  // ملف برقم إصدار (?v=N) لا يتغيّر أبداً ⇒ يُخزَّن في المتصفح سنة؛ غيره يُتحقَّق منه بـETag (رد 304 بلا جسم)
+  const cache = p === '/index.html' ? 'no-cache' : u.searchParams.has('v') ? 'public, max-age=31536000, immutable' : 'public, max-age=86400';
+  const h = { 'Content-Type': f.type, 'Cache-Control': cache, 'ETag': f.etag, 'Vary': 'Accept-Encoding', 'X-Content-Type-Options': 'nosniff' };
+  if (req.headers['if-none-match'] === f.etag) { res.writeHead(304, h); return res.end() }
+  let b = f.body;
+  if (f.gz && gzipOk(req)) { b = f.gz; h['Content-Encoding'] = 'gzip' }
+  h['Content-Length'] = b.length;
+  res.writeHead(200, h);
+  res.end(req.method === 'HEAD' ? undefined : b);
 }
 
 /* ---------- واجهة البيانات ---------- */
@@ -201,15 +240,16 @@ async function api(req, res, route) {
 
 /* ---------- التشغيل ---------- */
 (async () => {
+  await loadStatic();
   store = await makeStore();
   await getState();
-  http.createServer(async (req, res) => {
+  const server = http.createServer(async (req, res) => {
     try {
       const p = new URL(req.url, 'http://x').pathname;
       if (p === '/healthz') return send(res, 200, { ok: true });
       if (p.startsWith('/api/')) return await api(req, res, p.slice(5).replace(/\/$/, ''));
       if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end() }
-      await serveStatic(req, res);
+      serveStatic(req, res);
     } catch (e) {
       console.error(e);
       if (!res.headersSent) send(res, e.code === 413 ? 413 : e.code === 400 ? 400 : 500, { error: 'server_error' });
@@ -217,5 +257,11 @@ async function api(req, res, route) {
   }).listen(PORT, () => {
     console.log(`CSR platform on :${PORT} · storage: ${store.kind}`);
     if (store.kind === 'file' && process.env.RENDER && !process.env.DATA_DIR) console.warn('WARNING: no DATABASE_URL set. Data is stored on the temporary disk and WILL BE LOST on restart/deploy. Set DATABASE_URL.');
+    if (!process.env.SESSION_SECRET) console.warn('WARNING: no SESSION_SECRET set. Everyone will be logged out on every restart.');
+  });
+  // Render يرسل SIGTERM عند النوم وعند كل نشر: ننهي الطلبات الجارية (والكتابة على القاعدة) ثم نغلق
+  process.on('SIGTERM', () => {
+    server.close(() => withLock(async () => { if (store.pool) await store.pool.end().catch(() => {}) }).then(() => process.exit(0)));
+    setTimeout(() => process.exit(0), 8000).unref();
   });
 })().catch(e => { console.error('Startup failed:', e); process.exit(1) });

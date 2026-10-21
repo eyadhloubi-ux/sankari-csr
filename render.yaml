@@ -1,12 +1,20 @@
-# Render Blueprint: خادم واحد (Docker) + قاعدة بيانات خارجية عبر DATABASE_URL
+# Render Blueprint: خدمة Node واحدة (بلا Docker) + قاعدة Neon خارجية عبر DATABASE_URL
 services:
   - type: web
     name: sankari-csr
-    runtime: docker
+    runtime: node
     plan: free
+    region: frankfurt          # أقرب منطقة إلى Neon (AWS Europe Central · Frankfurt)
+    buildCommand: npm ci --omit=dev --no-audit --no-fund
+    startCommand: node server.js
     healthCheckPath: /healthz
+    autoDeploy: true
+    buildFilter:               # لا بناء جديد (دقائق بناء) حين يتغيّر README أو أدوات الصيانة فقط
+      ignoredPaths:
+        - README.md
+        - tools/**
     envVars:
       - key: DATABASE_URL
-        sync: false          # الصق رابط قاعدة البيانات (Neon) من لوحة Render
+        sync: false            # الصق رابط قاعدة البيانات (Neon) من لوحة Render
       - key: SESSION_SECRET
-        generateValue: true  # مفتاح الجلسات يُولَّد تلقائياً
+        generateValue: true    # مفتاح الجلسات يُولَّد تلقائياً

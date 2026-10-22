@@ -2,9 +2,9 @@
 /*
  * منصة لجنة المسؤولية المجتمعية - الخادم
  * يخدّم ملفات الموقع ويحفظ البيانات في مكان واحد مشترك لكل المستخدمين.
- * التخزين: Postgres إذا وُجد DATABASE_URL، وإلا ملف JSON داخل DATA_DIR.
- * الاستهلاك: الملفات الثابتة تُقرأ وتُضغط مرة واحدة عند التشغيل وتُخدَّم بـETag (304)،
- * وردود JSON تُضغط gzip، والنسخة الاحتياطية تُكتب مرة كل ساعة على الأكثر وتُحذف بعد 30 يوماً.
+ * التخزين: PostgreSQL إذا وُجد DATABASE_URL (الجداول بترحيلات SQL مرقّمة في migrations/ تُطبَّق
+ * عند التشغيل، وطبقة التخزين في db/store-pg.js)، وإلا ملف JSON داخل DATA_DIR (للتطوير المحلي).
+ * الاستهلاك: الملفات الثابتة تُقرأ وتُضغط مرة واحدة عند التشغيل وتُخدَّم بـETag (304)، وردود JSON تُضغط gzip.
  */
 const http = require('http');
 const fs = require('fs');
@@ -20,8 +20,6 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const TOKEN_DAYS = 30;
 const MAX_BODY = 25 * 1024 * 1024;
-const BACKUP_EVERY_MS = 60 * 60 * 1000;
-const BACKUP_KEEP_DAYS = 30;
 
 /* ---------- كلمات المرور ---------- */
 const normD = s => String(s == null ? '' : s)
@@ -48,37 +46,20 @@ function readToken(t) {
 }
 
 /* ---------- التخزين ---------- */
-let store;
+let store, schema = '';
 async function makeStore() {
   if (process.env.DATABASE_URL) {
-    const { Pool } = require('pg');
-    const local = /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL);
-    // اتصالات قليلة تُغلق بعد 10 ثوانٍ من الخمول حتى ينام Neon (scale to zero) بين الحفظات
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: local ? false : { rejectUnauthorized: false }, max: 3, idleTimeoutMillis: 10000, connectionTimeoutMillis: 15000 });
-    // Neon يقطع الاتصالات الخاملة حين ينام؛ بلا هذا المعالج يسقط الخادم كله
-    pool.on('error', e => console.warn('pg idle client error:', e.message));
-    await pool.query(`CREATE TABLE IF NOT EXISTS csr_store (id TEXT PRIMARY KEY, rev INTEGER NOT NULL, doc JSONB NOT NULL, updated_at TIMESTAMPTZ DEFAULT now());
-      CREATE TABLE IF NOT EXISTS csr_backup (day DATE PRIMARY KEY, doc JSONB NOT NULL, updated_at TIMESTAMPTZ DEFAULT now());`);
-    let lastBackup = 0, lastPrune = '';
-    return {
-      kind: 'postgres',
-      pool,
-      async load() { const r = await pool.query('SELECT rev, doc FROM csr_store WHERE id=$1', ['main']); return r.rows[0] ? { rev: r.rows[0].rev, doc: r.rows[0].doc } : null },
-      async save(rev, doc) {
-        const j = JSON.stringify(doc);
-        await pool.query(`INSERT INTO csr_store (id, rev, doc, updated_at) VALUES ('main', $1, $2::jsonb, now())
-          ON CONFLICT (id) DO UPDATE SET rev=EXCLUDED.rev, doc=EXCLUDED.doc, updated_at=now()`, [rev, j]);
-        // النسخة اليومية: مرة كل ساعة على الأكثر بدل كل حفظ (كل حفظ كان يرسل المستند كاملاً مرتين)
-        const now = Date.now(), today = new Date(now).toISOString().slice(0, 10);
-        if (now - lastBackup < BACKUP_EVERY_MS && today === new Date(lastBackup).toISOString().slice(0, 10)) return;
-        lastBackup = now;
-        try {
-          await pool.query(`INSERT INTO csr_backup (day, doc, updated_at) VALUES (current_date, $1::jsonb, now())
-            ON CONFLICT (day) DO UPDATE SET doc=EXCLUDED.doc, updated_at=now()`, [j]);
-          if (lastPrune !== today) { lastPrune = today; await pool.query(`DELETE FROM csr_backup WHERE day < current_date - $1::int`, [BACKUP_KEEP_DAYS]) }
-        } catch (e) { console.warn('backup failed:', e.message) }
-      }
-    };
+    const { makePool, createPgStore } = require('./db/store-pg');
+    const { migrate, status } = require('./db/migrate');
+    const pool = makePool(process.env.DATABASE_URL);
+    // الترحيلات تُطبَّق تلقائياً عند التشغيل (آمن مع أكثر من تشغيل بفضل القفل). إن كان خط النشر (CI/CD)
+    // يشغّل npm run migrate بنفسه فاضبط MIGRATE_ON_START=false، وعندها يرفض الخادم العمل على مخطط ناقص.
+    if (process.env.MIGRATE_ON_START === 'false') {
+      const st = await status(pool);
+      if (st.pending.length) throw new Error('database schema is not up to date, run: npm run migrate (pending: ' + st.pending.map(f => f.name).join(', ') + ')');
+      schema = st.files.length ? st.files[st.files.length - 1].version : '000';
+    } else schema = (await migrate(pool, { log: console.log })).version;
+    return createPgStore(pool);
   }
   await fsp.mkdir(path.join(DATA_DIR, 'backups'), { recursive: true });
   const file = path.join(DATA_DIR, 'store.json');
@@ -255,7 +236,8 @@ async function api(req, res, route) {
       if (!res.headersSent) send(res, e.code === 413 ? 413 : e.code === 400 ? 400 : 500, { error: 'server_error' });
     }
   }).listen(PORT, () => {
-    console.log(`CSR platform on :${PORT} · storage: ${store.kind}`);
+    console.log(`CSR platform on :${PORT} · storage: ${store.kind}` + (schema ? ` · schema ${schema}` : ''));
+    if (store.kind === 'file' && process.env.NODE_ENV === 'production') console.warn('WARNING: production without DATABASE_URL. Data is kept in ' + DATA_DIR + ' only; a deploy that replaces the app folder will delete it. Set DATABASE_URL.');
     if (store.kind === 'file' && process.env.RENDER && !process.env.DATA_DIR) console.warn('WARNING: no DATABASE_URL set. Data is stored on the temporary disk and WILL BE LOST on restart/deploy. Set DATABASE_URL.');
     if (!process.env.SESSION_SECRET) console.warn('WARNING: no SESSION_SECRET set. Everyone will be logged out on every restart.');
   });

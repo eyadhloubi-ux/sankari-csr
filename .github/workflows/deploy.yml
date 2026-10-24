@@ -1,0 +1,65 @@
+# فحص ونشر منصة اللجنة
+# - كل رفع وكل طلب دمج: npm ci ثم npm run check (الفحوص الآلية كاملة، مع PostgreSQL عبر PGlite).
+# - كل رفع إلى main (أو تشغيل يدوي): بعد نجاح الفحص تُبنى حزمة الإنتاج وتُرسل إلى الخادم.
+#   على الخادم يستقبلها /usr/local/sbin/csr-deploy فقط (المفتاح مقيّد بهذا الأمر): نسخة احتياطية من
+#   القاعدة ومن مجلد التطبيق، مجلد جديد، إعادة تشغيل، فحص الصحة، وإرجاع النسخة السابقة إن فشل.
+# السر المطلوب: CSR_DEPLOY_KEY (المفتاح الخاص لمستخدم deploy على الخادم).
+name: Check and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+
+  deploy:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # الحزمة: ما يحتاجه الخادم فقط. لا تُنشر الملفات القديمة في الجذر (app.js و style.css و Dockerfile).
+      - name: Build bundle
+        run: |
+          mkdir bundle
+          cp -r index.html server.js package.json package-lock.json assets css js db migrations bundle/
+          (cd bundle && npm ci --omit=dev --no-audit --no-fund)
+          tar -czf csr.tar.gz -C bundle .
+          ls -la csr.tar.gz
+
+      - name: Deploy to 204.168.186.215:9994
+        env:
+          DEPLOY_KEY: ${{ secrets.CSR_DEPLOY_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "204.168.186.215 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHki7b1x5etg2Br621DIEdEfY9urcwIOtYlYBtr4nncL" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=yes deploy@204.168.186.215 csr-deploy < csr.tar.gz
+
+      - name: Check the public page
+        run: curl -fsS -o /dev/null -w "%{http_code}\n" http://204.168.186.215:9994/

@@ -51,7 +51,7 @@ jobs:
           tar -czf csr.tar.gz -C bundle .
           ls -la csr.tar.gz
 
-      - name: Deploy to 204.168.186.215:9994
+      - name: Deploy to the Sankari server (csr.sankariportal.com)
         env:
           DEPLOY_KEY: ${{ secrets.CSR_DEPLOY_KEY }}
         run: |

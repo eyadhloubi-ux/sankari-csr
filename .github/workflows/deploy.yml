@@ -62,4 +62,4 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=yes deploy@204.168.186.215 csr-deploy < csr.tar.gz
 
       - name: Check the public page
-        run: curl -fsS -o /dev/null -w "%{http_code}\n" http://204.168.186.215:9994/
+        run: curl -fsS -o /dev/null -w "%{http_code}\n" https://csr.sankariportal.com/

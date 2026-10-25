@@ -26,7 +26,7 @@ function fnv(s) { s = String(s).trim(); let h = 0x811c9dc5; for (let i = 0; i < 
 const seedDoc = () => ({ v: 7, users: [{ id: 'u1', login: 'eyad', name: 'إياد', admin: true, must: true, pw: fnv('admin1234') }, { id: 'u2', login: 'm', name: 'عضو', role: 'member', pw: fnv('member123') }], projects: [], events: [], seen: {}, perm: {}, committee: { sections: [] } });
 
 function baseEnv(extra) {
-  const env = Object.assign({}, process.env, { SESSION_SECRET: 'smoke-secret', PG_POOL_MAX: '1' }, extra);
+  const env = Object.assign({}, process.env, { SESSION_SECRET: 'smoke-secret', PG_POOL_MAX: '1', TICK_MS: '300' }, extra);
   for (const k of ['DATABASE_URL', 'RENDER', 'MIGRATE_ON_START', 'NODE_ENV']) if (!(extra && k in extra)) delete env[k];
   return env;
 }
@@ -66,13 +66,21 @@ async function apiSuite(env, kind, tag) {
       ok(/<html/.test(zlib.gunzipSync(raw.b).toString()), 'index gunzip content');
       ok(raw.r.headers['cache-control'] === 'no-cache' && !!raw.r.headers.etag, 'index no-cache + etag');
       ok((await fetch(S.base + '/', { headers: { 'If-None-Match': raw.r.headers.etag } })).status === 304, 'index 304');
-      const js = await fetch(S.base + '/js/app.js?v=12');
+      const js = await fetch(S.base + '/js/app.js?v=13');
       ok(js.status === 200 && /immutable/.test(js.headers.get('cache-control')), 'versioned js immutable');
       ok((await fetch(S.base + '/assets/logo-mark.png')).headers.get('content-type') === 'image/png', 'png');
       ok((await fetch(S.base + '/css/nope.css')).status === 404, 'missing asset 404');
       for (const leak of ['/css/..%2fserver.js', '/db/store-pg.js', '/migrations/001_core.sql', '/package.json'])
         ok(!/require\(|CREATE TABLE|"dependencies"/.test(await (await fetch(S.base + leak)).text()), 'no server file leak: ' + leak);
       ok(/<html/.test(await (await fetch(S.base + '/some/route')).text()), 'spa fallback');
+      // التطبيق (PWA): عامل الخدمة والـmanifest من الجذر وبلا تخزين طويل
+      const sw = await fetch(S.base + '/sw.js');
+      ok(sw.status === 200 && /javascript/.test(sw.headers.get('content-type')) && sw.headers.get('cache-control') === 'no-cache' && /addEventListener\('push'/.test(await sw.text()), 'sw.js served no-cache');
+      const mf = await fetch(S.base + '/manifest.webmanifest');
+      const mj = await mf.json().catch(() => null);
+      ok(mf.status === 200 && /manifest\+json/.test(mf.headers.get('content-type')) && mj && mj.display === 'standalone' && mj.icons.length >= 2, 'manifest served');
+      ok((await fetch(S.base + '/assets/icon-512.png')).headers.get('content-type') === 'image/png', 'app icon');
+      ok(!/require\(/.test(await (await fetch(S.base + '/lib/push.js')).text()), 'no server file leak: /lib/push.js');
     }
 
     // التهيئة والدخول
@@ -116,6 +124,38 @@ async function apiSuite(env, kind, tag) {
     ok((await req('POST', '/api/password', { password: 'NewPass-2026' }, H)).status === 200, T('change pw'));
     ok((await req('POST', '/api/login', { login: 'eyad', password: 'NewPass-2026' })).j.must === false, T('login new pw'));
     ok((await req('GET', '/api/nothing', null, H)).status === 404, T('api 404'));
+
+    // إشعارات الجهاز: المفتاح العام · الاشتراك · إلغاؤه
+    const pk = await req('GET', '/api/push/key', null, H);
+    ok(pk.status === 200 && typeof pk.j.key === 'string' && pk.j.key.length > 80, T('push key'));
+    ok((await req('GET', '/api/push/key')).status === 401, T('push key needs login'));
+    ok((await req('POST', '/api/push/sub', { sub: { endpoint: 'http://x' } }, H)).status === 400, T('push bad sub'));
+    const fake = { endpoint: 'https://push.invalid/sub-1', keys: { p256dh: 'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM', auth: 'tBHItJI5svbpez7KI4CCXg' } };
+    ok((await req('POST', '/api/push/sub', { sub: fake }, H)).status === 200, T('push sub'));
+    ok((await req('POST', '/api/push/unsub', { endpoint: fake.endpoint }, H)).status === 200, T('push unsub'));
+
+    // تجديد الجلسة تلقائياً: رمز قارب على الانتهاء يُستبدل برمز جديد
+    const crypto = require('crypto'), sg = b => crypto.createHmac('sha256', 'smoke-secret').update(b).digest('base64url');
+    const ob = Buffer.from(JSON.stringify({ u: 'u1', e: Date.now() + 3 * 864e5 })).toString('base64url');
+    const rn = await req('GET', '/api/data?rev=1', null, { Authorization: 'Bearer ' + ob + '.' + sg(ob) });
+    ok(rn.status === 200 && typeof rn.j.token === 'string' && rn.j.token !== ob + '.' + sg(ob), T('token renewed'));
+    ok(!('token' in (await req('GET', '/api/data?rev=1', null, H)).j), T('fresh token not renewed'));
+
+    // الاجتماعات: التذكير قبل يوم، والجلسة التالية للاجتماع الدوري (المؤقّت كل 300ms في الفحص)
+    const now = Date.now(), cd = await req('GET', '/api/data', null, H);
+    const withM = Object.assign({}, cd.j.data, { notes: [], meetings: [
+      { id: 'm1', kind: 'once', title: 'اجتماع قريب', at: now + 2 * 36e5, dur: 60, inv: ['u1', 'u2'], rsvp: { u1: { s: 'yes', at: now } }, agenda: [], by: 'u1' },
+      { id: 'm2', kind: 'series', rep: 'w', title: 'الاجتماع الأسبوعي', at: now - 3 * 36e5, dur: 60, inv: ['u1', 'u2'], rsvp: {}, agenda: [{ id: 'a1', t: 'بند لم يُناقش', u: 'u2', at: now }, { id: 'a2', t: 'بند نوقش', u: 'u1', at: now, done: true }], link: 'https://meet.example/x', linkAt: now - 4 * 36e5, by: 'u1' }] });
+    ok((await req('PUT', '/api/data', { rev: cd.j.rev, data: withM }, H)).status === 200, T('put meetings'));
+    let md2 = null;
+    for (let i = 0; i < 30; i++) { await sleep(150); md2 = (await req('GET', '/api/data', null, H)).j.data; if (md2.meetings.length === 3 && md2.meetings[0].r24) break }
+    const m1 = md2.meetings.find(m => m.id === 'm1'), m2 = md2.meetings.find(m => m.id === 'm2'), m3 = md2.meetings.find(m => m.sid === 'm2');
+    ok(m1 && m1.r24 && md2.notes.some(n => n.go && n.go.m === 'm1' && n.to.includes('u1')) && md2.notes.some(n => n.go && n.go.m === 'm1' && n.to.includes('u2') && /لم تؤكد/.test(n.t)), T('meeting 24h reminders'));
+    ok(m3 && m2.nx === m3.id && m3.at === now - 3 * 36e5 + 7 * 864e5 && m3.agenda.length === 1 && m3.agenda[0].t === 'بند لم يُناقش' && m3.link === 'https://meet.example/x' && m3.linkAt > 0, T('series next session + agenda carry'));
+    ok(md2.notes.some(n => n.k === 'inv' && n.go.m === (m3 && m3.id)), T('series invitation note'));
+    await sleep(700);
+    const md3 = (await req('GET', '/api/data', null, H)).j.data;
+    ok(md3.meetings.length === 3 && md3.notes.length === md2.notes.length, T('tick idempotent'));
     ok(new RegExp('storage: ' + kind).test(S.log), T('startup log'));
 
     // بقاء كل شيء بعد إعادة التشغيل
@@ -146,9 +186,9 @@ async function pgSuite() {
     // أ. قاعدة جديدة: الترحيلات ثم كل فحوص الواجهة
     const A = await newDb(), envA = baseEnv({ DATABASE_URL: A.url });
     let r = await run('db/migrate.js', ['--status'], envA);
-    ok(r.code === 0 && /PENDING\s+001_core\.sql/.test(r.out) && /2 pending/.test(r.out), 'migrate:status on empty db');
+    ok(r.code === 0 && /PENDING\s+001_core\.sql/.test(r.out) && /3 pending/.test(r.out), 'migrate:status on empty db');
     r = await run('db/migrate.js', [], envA);
-    ok(r.code === 0 && /001_core\.sql/.test(r.out) && /002_users\.sql/.test(r.out) && /schema 002/.test(r.out), 'migrate applies 001+002');
+    ok(r.code === 0 && /001_core\.sql/.test(r.out) && /002_users\.sql/.test(r.out) && /003_push\.sql/.test(r.out) && /schema 003/.test(r.out), 'migrate applies 001+002+003');
     r = await run('db/migrate.js', [], envA);
     ok(r.code === 0 && /up to date/.test(r.out), 'migrate twice = no-op');
     await apiSuite(envA, 'postgres', 'pg');
@@ -186,7 +226,7 @@ async function pgSuite() {
     const legacy = seedDoc(); legacy.projects = [{ id: 'p9', name: 'قديم' }];
     await C.db.query("INSERT INTO csr_store (id, rev, doc) VALUES ('main', 2072, $1::jsonb)", [JSON.stringify(legacy)]);
     const SC = await startServer(baseEnv({ DATABASE_URL: C.url }));
-    ok(/migration applied: 002_users\.sql/.test(SC.log) && /schema 002/.test(SC.log), 'legacy db migrated on start');
+    ok(/migration applied: 002_users\.sql/.test(SC.log) && /schema 003/.test(SC.log), 'legacy db migrated on start');
     const LC = await SC.req('POST', '/api/login', { login: 'm', password: 'member123' });
     ok(LC.status === 200, 'legacy password works after migration');
     const dc = await SC.req('GET', '/api/data', null, { Authorization: 'Bearer ' + LC.j.token });

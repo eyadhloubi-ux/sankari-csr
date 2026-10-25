@@ -12,10 +12,13 @@ const fsp = fs.promises;
 const path = require('path');
 const crypto = require('crypto');
 const zlib = require('zlib');
+const { makePush } = require('./lib/push');
+const { tick, fresh, noteIds } = require('./lib/meetings');
 
 const PORT = Number(process.env.PORT) || 10000;
 const ROOT = __dirname;
-const PUBLIC = ['/index.html', '/css/', '/js/', '/assets/'];
+const PUBLIC = ['/index.html', '/sw.js', '/manifest.webmanifest', '/css/', '/js/', '/assets/'];
+const NO_CACHE = ['/index.html', '/sw.js', '/manifest.webmanifest'];
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const TOKEN_DAYS = 30;
@@ -44,6 +47,8 @@ function readToken(t) {
   if (sig.length !== good.length || !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(good))) return null;
   try { const o = JSON.parse(Buffer.from(body, 'base64url').toString()); return o.e > Date.now() ? o.u : null } catch (e) { return null }
 }
+// تجديد تلقائي: إذا بقي على الرمز أقل من 25 يوماً يُعطى رمزاً جديداً، فمن يفتح المنصة (أو التطبيق) ولو مرة في الشهر لا يخرج من حسابه
+function tokenLeft(t) { try { return JSON.parse(Buffer.from(String(t).split('.')[0], 'base64url').toString()).e - Date.now() } catch (e) { return 0 } }
 
 /* ---------- التخزين ---------- */
 let store, schema = '';
@@ -71,7 +76,22 @@ async function makeStore() {
       const tmp = file + '.tmp';
       await fsp.writeFile(tmp, j); await fsp.rename(tmp, file);
       await fsp.writeFile(path.join(DATA_DIR, 'backups', 'store-' + new Date().toISOString().slice(0, 10) + '.json'), j);
-    }
+    },
+    // إشعارات الجهاز في وضع الملف: data/push.json
+    ...filePush(path.join(DATA_DIR, 'push.json'))
+  };
+}
+
+function filePush(file) {
+  let mem = null;
+  const load = async () => { if (!mem) { try { mem = JSON.parse(await fsp.readFile(file, 'utf8')) } catch (e) { mem = { kv: {}, subs: [] } } } return mem };
+  const flush = async () => { const tmp = file + '.tmp'; await fsp.writeFile(tmp, JSON.stringify(mem)); await fsp.rename(tmp, file) };
+  return {
+    async kvGet(k) { const m = await load(); return k in m.kv ? m.kv[k] : null },
+    async kvSet(k, v) { const m = await load(); m.kv[k] = v; await flush() },
+    async subAdd(uid, sub, ua) { const m = await load(); m.subs = m.subs.filter(x => x.sub.endpoint !== sub.endpoint); m.subs.push({ uid, sub, ua: String(ua || '').slice(0, 200) }); await flush() },
+    async subDel(endpoint) { const m = await load(); m.subs = m.subs.filter(x => x.sub.endpoint !== endpoint); await flush() },
+    async subsOf(uids) { const m = await load(); return m.subs.filter(x => uids.includes(x.uid)) }
   };
 }
 
@@ -125,7 +145,7 @@ function serveStatic(req, res) {
   let f = files.get(p);
   if (!f) { if (p.startsWith('/index.html') || !path.extname(p)) f = files.get('/index.html'); else { res.writeHead(404); return res.end('Not found') } }
   // ملف برقم إصدار (?v=N) لا يتغيّر أبداً ⇒ يُخزَّن في المتصفح سنة؛ غيره يُتحقَّق منه بـETag (رد 304 بلا جسم)
-  const cache = p === '/index.html' ? 'no-cache' : u.searchParams.has('v') ? 'public, max-age=31536000, immutable' : 'public, max-age=86400';
+  const cache = NO_CACHE.includes(p) ? 'no-cache' : u.searchParams.has('v') ? 'public, max-age=31536000, immutable' : 'public, max-age=86400';
   const h = { 'Content-Type': f.type, 'Cache-Control': cache, 'ETag': f.etag, 'Vary': 'Accept-Encoding', 'X-Content-Type-Options': 'nosniff' };
   if (req.headers['if-none-match'] === f.etag) { res.writeHead(304, h); return res.end() }
   let b = f.body;
@@ -177,8 +197,9 @@ async function api(req, res, route) {
 
   if (route === 'data' && req.method === 'GET') {
     const q = new URL(req.url, 'http://x').searchParams.get('rev');
-    if (q && Number(q) === s0.rev) return send(res, 200, { rev: s0.rev, same: true });
-    return send(res, 200, { rev: s0.rev, data: strip(s0.doc) });
+    const tok = req.headers.authorization.replace(/^Bearer\s+/i, ''), extra = tokenLeft(tok) < 25 * 864e5 ? { token: makeToken(uid) } : {};
+    if (q && Number(q) === s0.rev) return send(res, 200, Object.assign({ rev: s0.rev, same: true }, extra));
+    return send(res, 200, Object.assign({ rev: s0.rev, data: strip(s0.doc) }, extra));
   }
 
   if (route === 'data' && req.method === 'PUT') {
@@ -198,8 +219,10 @@ async function api(req, res, route) {
         doc.users = s.doc.users;
         doc.perm = s.doc.perm;
       }
+      const before = noteIds(s.doc);
       const rev = await putState(doc);
       send(res, 200, { rev });
+      pushNotes(fresh(before, doc, Date.now()));
     });
   }
 
@@ -216,7 +239,47 @@ async function api(req, res, route) {
     });
   }
 
+  // إشعارات الجهاز
+  if (route === 'push/key' && req.method === 'GET') return send(res, 200, { key: push ? push.key() : null });
+  if (route === 'push/sub' && req.method === 'POST') {
+    const b = await readBody(req), sub = b && b.sub;
+    if (!sub || typeof sub.endpoint !== 'string' || !/^https:\/\//.test(sub.endpoint) || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) return send(res, 400, { error: 'invalid_sub' });
+    await store.subAdd(uid, { endpoint: sub.endpoint, keys: { p256dh: String(sub.keys.p256dh), auth: String(sub.keys.auth) } }, req.headers['user-agent']);
+    return send(res, 200, { ok: true });
+  }
+  if (route === 'push/unsub' && req.method === 'POST') {
+    const b = await readBody(req);
+    if (b && b.endpoint) await store.subDel(String(b.endpoint));
+    return send(res, 200, { ok: true });
+  }
+  if (route === 'push/test' && req.method === 'POST') {
+    if (!push) return send(res, 200, { sent: 0 });
+    const n = await push.send([uid], { t: 'الإشعارات تعمل', b: 'ستصلك هنا الدعوات والتذكيرات والرسائل', u: '/#notes', tag: 'test' });
+    return send(res, 200, { sent: n });
+  }
+
   send(res, 404, { error: 'not_found' });
+}
+
+/* ---------- الإشعارات والاجتماعات ---------- */
+let push = null;
+function pushNotes(list) {
+  if (!push || !list.length) return;
+  for (const n of list) {
+    const to = n.to.filter(u => u && u !== n.by);
+    if (to.length) push.send(to, { t: String(n.t || 'إشعار جديد').slice(0, 120), b: String(n.b || '').slice(0, 240), u: '/#n-' + n.id, tag: n.id }).catch(e => console.warn('push:', e.message));
+  }
+}
+// كل دقيقة: تذكيرات الاجتماعات والجلسة التالية للاجتماع الدوري
+function meetingTick() {
+  return withLock(async () => {
+    const s = await getState();
+    if (!s || !s.doc) return;
+    const doc = JSON.parse(JSON.stringify(s.doc)), now = Date.now(), before = noteIds(s.doc);
+    if (!tick(doc, now)) return;
+    await putState(doc);
+    pushNotes(fresh(before, doc, now));
+  }).catch(e => console.warn('meeting tick failed:', e.message));
 }
 
 /* ---------- التشغيل ---------- */
@@ -224,6 +287,10 @@ async function api(req, res, route) {
   await loadStatic();
   store = await makeStore();
   await getState();
+  push = makePush(store);
+  try { await push.init() } catch (e) { push = null; console.warn('push disabled:', e.message) }
+  setInterval(meetingTick, Number(process.env.TICK_MS) || 60000).unref();
+  setTimeout(meetingTick, 5000).unref();
   const server = http.createServer(async (req, res) => {
     try {
       const p = new URL(req.url, 'http://x').pathname;
@@ -236,7 +303,7 @@ async function api(req, res, route) {
       if (!res.headersSent) send(res, e.code === 413 ? 413 : e.code === 400 ? 400 : 500, { error: 'server_error' });
     }
   }).listen(PORT, () => {
-    console.log(`CSR platform on :${PORT} · storage: ${store.kind}` + (schema ? ` · schema ${schema}` : ''));
+    console.log(`CSR platform on :${PORT} · storage: ${store.kind}` + (schema ? ` · schema ${schema}` : '') + (push ? ' · push on' : ''));
     if (store.kind === 'file' && process.env.NODE_ENV === 'production') console.warn('WARNING: production without DATABASE_URL. Data is kept in ' + DATA_DIR + ' only; a deploy that replaces the app folder will delete it. Set DATABASE_URL.');
     if (store.kind === 'file' && process.env.RENDER && !process.env.DATA_DIR) console.warn('WARNING: no DATABASE_URL set. Data is stored on the temporary disk and WILL BE LOST on restart/deploy. Set DATABASE_URL.');
     if (!process.env.SESSION_SECRET) console.warn('WARNING: no SESSION_SECRET set. Everyone will be logged out on every restart.');

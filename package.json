@@ -1,6 +1,6 @@
 {
   "name": "sankari-csr-platform",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "description": "منصة لجنة المسؤولية المجتمعية - سنكري القابضة",
   "main": "server.js",
@@ -12,8 +12,13 @@
     "db:import": "node db/import-store.js",
     "db:export": "node db/export-store.js"
   },
-  "engines": { "node": ">=18" },
-  "dependencies": { "pg": "^8.11.3" },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "pg": "^8.11.3",
+    "web-push": "^3.6.7"
+  },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.11",
     "@electric-sql/pglite-socket": "0.2.14"

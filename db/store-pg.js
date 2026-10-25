@@ -1,9 +1,10 @@
 'use strict';
 /*
- * طبقة التخزين في PostgreSQL (بعد الترحيلات 001 و 002)
+ * طبقة التخزين في PostgreSQL (بعد الترحيلات 001 و 002 و 003)
  *   csr_store  (id='main')  المستند بلا الحسابات + rev
  *   csr_users               الحسابات، كل حساب صف (مع تجزئة كلمة المرور)
  *   csr_backup              نسخة يومية من المستند الكامل (مع الحسابات)
+ *   csr_push_sub · csr_kv   اشتراكات إشعارات الجهاز ومفاتيح VAPID
  * الخادم يرى مستنداً واحداً {users, projects, ...} كما كان؛ هذه الطبقة تفصل الحسابات وتجمعها.
  */
 const { Pool } = require('pg');
@@ -85,7 +86,17 @@ function createPgStore(pool) {
           ON CONFLICT (day) DO UPDATE SET doc=EXCLUDED.doc, updated_at=now()`, [JSON.stringify(doc)]);
         if (lastPrune !== today) { lastPrune = today; await pool.query('DELETE FROM csr_backup WHERE day < current_date - $1::int', [BACKUP_KEEP_DAYS]) }
       } catch (e) { console.warn('backup failed:', e.message) }
-    }
+    },
+    // إعدادات الخادم (مفاتيح VAPID) واشتراكات إشعارات الجهاز (الترحيل 003)
+    async kvGet(k) { const r = await pool.query('SELECT v FROM csr_kv WHERE k=$1', [k]); return r.rows[0] ? r.rows[0].v : null },
+    async kvSet(k, v) { await pool.query('INSERT INTO csr_kv (k, v, updated_at) VALUES ($1,$2,now()) ON CONFLICT (k) DO UPDATE SET v=EXCLUDED.v, updated_at=now()', [k, v]) },
+    async subAdd(uid, sub, ua) {
+      await pool.query(`INSERT INTO csr_push_sub (endpoint, uid, sub, ua) VALUES ($1,$2,$3::jsonb,$4)
+        ON CONFLICT (endpoint) DO UPDATE SET uid=EXCLUDED.uid, sub=EXCLUDED.sub, ua=EXCLUDED.ua`, [sub.endpoint, uid, JSON.stringify(sub), String(ua || '').slice(0, 200)]);
+    },
+    async subDel(endpoint) { await pool.query('DELETE FROM csr_push_sub WHERE endpoint=$1', [endpoint]) },
+    async subsOf(uids) { const r = await pool.query('SELECT uid, sub FROM csr_push_sub WHERE uid = ANY($1::text[])', [uids]); return r.rows },
+    async subOk(endpoint) { await pool.query('UPDATE csr_push_sub SET last_ok=now() WHERE endpoint=$1', [endpoint]) }
   };
 }
 

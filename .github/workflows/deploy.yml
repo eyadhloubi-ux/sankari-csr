@@ -42,11 +42,15 @@ jobs:
           node-version: 22
           cache: npm
 
-      # الحزمة: ما يحتاجه الخادم فقط. لا تُنشر الملفات القديمة في الجذر (app.js و style.css و Dockerfile).
+      # الحزمة: كل ملفات المستودع ما عدا قائمة الاستثناء أدناه، فأي ملف أو مجلد جديد (مثل lib/ و sw.js)
+      # يُنشر تلقائياً. المستثنى: ملفات الفحص والتوثيق والنشر، والنسخ القديمة في الجذر (app.js و style.css).
       - name: Build bundle
         run: |
           mkdir bundle
-          cp -r index.html server.js package.json package-lock.json assets css js db migrations bundle/
+          git ls-files -z \
+            | grep -zvE '^(\.github/|tools/|\.gitignore$|Dockerfile$|render\.yaml$|README\.md$|app\.js$|style\.css$)' \
+            | xargs -0 cp --parents -t bundle
+          find bundle -type f | sed 's#^bundle/##' | sort
           (cd bundle && npm ci --omit=dev --no-audit --no-fund)
           tar -czf csr.tar.gz -C bundle .
           ls -la csr.tar.gz

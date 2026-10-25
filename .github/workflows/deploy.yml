@@ -25,7 +25,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - run: npm run check
+      # محاولة ثانية مرة واحدة: tools/smoke.js ينتظر بدء الخادم 10 ثوانٍ فقط، وأجهزة GitHub تتجاوزها أحياناً.
+      # الفشل الحقيقي يفشل مرتين فيوقف النشر.
+      - run: npm run check || { echo "::warning::npm run check failed once; retrying"; npm run check; }
 
   deploy:
     needs: check

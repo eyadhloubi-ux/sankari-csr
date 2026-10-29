@@ -1382,3 +1382,72 @@ body.is-drag{user-select:none;-webkit-user-select:none;cursor:grabbing}
 .scrim .modal{max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px)}
 .m-b{min-height:0}
 @media (max-width:600px){.scrim .modal{max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}}
+
+/* ===== الإصدار 14 ===== */
+/* المراقب: اطلاع فقط — تُخفى أدوات التعديل (والمنع الفعلي في js/app.js وعلى الخادم) */
+body.ro [data-a]:not([data-a="about"]):not([data-a="home"]):not([data-a="install"]):not([data-a="logout"]):not([data-a="mIcs"]):not([data-a="mNo"]):not([data-a="mYes"]):not([data-a="mPast"]):not([data-a="meet"]):not([data-a="menu"]):not([data-a="myPw"]):not([data-a="note"]):not([data-a="open"]):not([data-a="openM"]):not([data-a="openR"]):not([data-a="openDec"]):not([data-a="pushOn"]):not([data-a="pv"]):not([data-a="goR"]):not([data-a="ofold"]):not([data-a="rtTog"]):not([data-a="subtab"]):not([data-a="tab"]):not([data-a="theme"]):not([data-a="view"]):not([data-a="bell"]):not([data-a="newLink"]):not([data-a="editLink"]):not([data-a="delLink"]):not([data-a="reload"]):not([data-a="xp"]):not([data-a="cancel"]):not([data-a="fold"]):not([data-a="cancelEditMsg"]):not([data-a="quick"]):not([data-a="localMode"]):not([data-a="backup"]):not([data-a="restore"]):not([data-a="roles"]):not([data-a="access"]):not([data-a="addUser"]):not([data-a="editUser"]):not([data-a="resetPw"]):not([data-a="delUser"]){display:none!important}
+body.ro form[data-form]:not([data-form="login"]):not([data-form="setpw"]){display:none!important}
+body.ro select[data-ch],body.ro input[data-ch]{pointer-events:none}
+body.ro [data-drag]{cursor:default}
+
+/* المنشن */
+.c-f{position:relative}
+.mnbox{position:absolute;inset-inline:10px;bottom:calc(100% + 6px);background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh-3);padding:4px;z-index:5;max-height:260px;overflow:auto;animation:pop .15s var(--ease)}
+.mn-h{font-size:11px;color:var(--muted);padding:6px 10px 2px}
+.mn-i{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;padding:6px 10px;border-radius:10px;text-align:start}
+.mn-i span{display:flex;flex-direction:column;line-height:1.35}
+.mn-i b{font-weight:500;font-size:13px}
+.mn-i small{font-size:11px;color:var(--muted)}
+.mn-i.on,.mn-i:hover{background:var(--brand-soft)}
+.bub p .mn{font-weight:500;color:var(--accent-ink);background:var(--accent-soft);border-radius:6px;padding:0 4px}
+.bub.me p .mn{color:#fff;background:rgba(255,255,255,.18)}
+.bub p .mn.me{background:var(--amber-soft);color:var(--amber)}
+/* مربع الكتابة الطويلة: يكبر للأعلى ويتمرّر من الداخل، والمحادثة على قد الشاشة الظاهرة (مع لوحة المفاتيح) */
+.c-f .ta{max-height:none;overflow-y:hidden;line-height:1.6}
+.chat{top:var(--vvt,0px);bottom:auto;height:var(--vvh,100vh)}
+@supports (height:100dvh){.chat{height:var(--vvh,100dvh)}}
+.c-b{min-height:0}
+
+/* روابط المشروع: صاحب الرابط */
+.lk-by{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:4px}
+.lk-by .av.sm{width:18px;height:18px;font-size:9.5px}
+
+/* خيارات القرار */
+.opts{display:flex;flex-direction:column;gap:8px}
+.optr{display:flex;align-items:center;gap:8px}
+.optr .fi{flex:1}
+.optn{width:24px;height:24px;border-radius:8px;background:var(--amber-soft);color:var(--amber);font-size:12px;font-weight:500;display:grid;place-items:center;flex:none}
+.addopt{align-self:flex-start}
+.opt{display:flex;align-items:center;gap:10px}
+.opt .opt-t{flex:1;min-width:0}
+
+/* لوحة المراحل */
+.bd-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-4px 0 10px}
+.bd-tip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:300}
+.bd-tip svg{width:15px;height:15px;flex:none}
+.board{overflow:auto;border:1px solid var(--line);border-radius:20px;background-color:var(--surface-2);background-image:radial-gradient(var(--line-2) 1px,transparent 1.2px);background-size:24px 24px;max-height:72vh;scrollbar-width:thin}
+.bd-in{position:relative;min-width:100%}
+.bd-svg{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.bd-e .ln{fill:none;stroke:#9AA6BC;stroke-width:2.2}
+.bd-e.ok .ln{stroke:var(--ok)}
+.bd-e.hold .ln{stroke:var(--red);stroke-dasharray:6 5}
+.bd-e.disc .ln{stroke-dasharray:3 5}
+.bd-e .hit{fill:none;stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
+.board.ed .bd-e:hover .ln{stroke:var(--red);stroke-width:2.6}
+.bd-svg .tmp{fill:none;stroke:var(--accent);stroke-width:2.4;stroke-dasharray:7 5}
+.bd-node{position:absolute;width:232px}
+.bd-node .sgc{width:100%;margin:0}
+.board.ed .bd-node{cursor:grab;user-select:none;-webkit-user-select:none}
+.bd-node.moving{z-index:5;cursor:grabbing}
+.bd-node.moving .sgc{box-shadow:var(--sh-3);transform:scale(1.02)}
+.bd-port{position:absolute;inset-inline-end:-9px;top:50%;width:18px;height:18px;margin-top:-9px;border-radius:50%;background:var(--accent);border:3px solid var(--surface);box-shadow:0 0 0 1px var(--accent);cursor:crosshair;touch-action:none;z-index:2;transition:transform .15s}
+.bd-port:hover{transform:scale(1.25)}
+.bd-grip{position:absolute;top:8px;inset-inline-end:8px;width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--muted);background:var(--surface);border:1px solid var(--line);touch-action:none;cursor:grab;z-index:2}
+.bd-grip svg{width:12px;height:12px;fill:currentColor}
+@media (hover:hover) and (pointer:fine){.bd-grip{display:none}}
+.board.linking .bd-node{cursor:crosshair}
+.board.linking .bd-node.tgt .sgc{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.board.linking .bd-node.src .sgc{border-color:var(--accent)}
+.bd-add{position:absolute;width:auto;height:44px;padding:0 16px;background:var(--surface)}
+@media (max-width:600px){.board{max-height:66vh;border-radius:16px}.bd-tip{font-size:11.5px}}
+@media (max-width:440px){body:not(.on-home) .brand span{display:none}}

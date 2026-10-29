@@ -171,6 +171,7 @@ async function api(req, res, route) {
       if (await getState()) return send(res, 409, { error: 'already_initialized' });
       const doc = body && body.data;
       if (!doc || !Array.isArray(doc.users) || !doc.users.some(u => u.admin) || !Array.isArray(doc.projects)) return send(res, 400, { error: 'invalid_data' });
+      doc.roles2 = 1; // بيانات جديدة: أدوارها بالتسمية الحالية (لا تحتاج تحويل «مراقب» القديم)
       const rev = await putState(doc);
       send(res, 200, { ok: true, rev });
     });
@@ -207,8 +208,10 @@ async function api(req, res, route) {
     return withLock(async () => {
       const s = await getState();
       if (Number(body.rev) !== s.rev) return send(res, 409, { rev: s.rev, data: strip(s.doc) });
-      const doc = body.data;
+      let doc = body.data;
       if (!doc || !Array.isArray(doc.users) || !Array.isArray(doc.projects)) return send(res, 400, { error: 'invalid_data' });
+      if (!me.admin && me.role === 'observer') doc = observerDoc(s.doc, doc, uid);
+      if (s.doc.roles2) doc.roles2 = s.doc.roles2;
       const old = new Map(s.doc.users.map(u => [u.id, u]));
       if (me.admin) {
         // المسؤول يدير الحسابات: كلمة المرور تُحفظ فقط إذا أرسلها (حساب جديد أو كلمة مؤقتة)
@@ -261,6 +264,37 @@ async function api(req, res, route) {
   send(res, 404, { error: 'not_found' });
 }
 
+/* ---------- المراقب: اطلاع فقط ----------
+ * يُقبل منه فقط: روابط المشروع التي أضافها هو (إضافة/تعديل/حذف)، وحالة القراءة الخاصة به، والإشعارات والأحداث،
+ * ورده على دعوات الاجتماعات. كل ما عدا ذلك يبقى كما هو على الخادم. */
+function observerDoc(cur, inc, uid) {
+  const out = JSON.parse(JSON.stringify(cur));
+  const ip = new Map((inc.projects || []).filter(Boolean).map(p => [p.id, p]));
+  (out.projects || []).forEach(p => {
+    const q = ip.get(p.id); if (!q) return;
+    const sv = Array.isArray(p.links) ? p.links : [], cl = (Array.isArray(q.links) ? q.links : []).filter(l => l && l.by === uid);
+    p.links = sv.filter(l => !l || l.by !== uid || cl.some(x => x.id === l.id)).map(l => l && l.by === uid ? cl.find(x => x.id === l.id) : l)
+      .concat(cl.filter(x => !sv.some(l => l && l.id === x.id)));
+  });
+  out.seen = Object.assign({}, out.seen || {}); if (inc.seen && inc.seen[uid]) out.seen[uid] = inc.seen[uid];
+  if (Array.isArray(inc.notes)) out.notes = inc.notes;
+  if (Array.isArray(inc.events)) out.events = inc.events;
+  const im = new Map((inc.meetings || []).filter(Boolean).map(m => [m.id, m]));
+  (out.meetings || []).forEach(m => { const q = im.get(m.id); if (q && q.rsvp && q.rsvp[uid] && (m.inv || []).includes(uid)) m.rsvp = Object.assign({}, m.rsvp, { [uid]: q.rsvp[uid] }) });
+  return out;
+}
+// مرة واحدة: دور «مراقب» القديم كان المتدرب، فيصبح «متدرب»؛ وصار «مراقب» دوراً جديداً للاطلاع فقط
+function migrateRoles() {
+  return withLock(async () => {
+    const s = await getState();
+    if (!s || !s.doc || s.doc.roles2) return;
+    const doc = JSON.parse(JSON.stringify(s.doc)); let n = 0;
+    (doc.users || []).forEach(u => { if (u.role === 'observer') { u.role = 'trainee'; n++ } });
+    doc.roles2 = 1; await putState(doc);
+    console.log('roles: ' + n + ' observer account(s) are now trainee');
+  });
+}
+
 /* ---------- الإشعارات والاجتماعات ---------- */
 let push = null;
 function pushNotes(list) {
@@ -287,6 +321,7 @@ function meetingTick() {
   await loadStatic();
   store = await makeStore();
   await getState();
+  await migrateRoles();
   push = makePush(store);
   try { await push.init() } catch (e) { push = null; console.warn('push disabled:', e.message) }
   setInterval(meetingTick, Number(process.env.TICK_MS) || 60000).unref();

@@ -66,7 +66,7 @@ async function apiSuite(env, kind, tag) {
       ok(/<html/.test(zlib.gunzipSync(raw.b).toString()), 'index gunzip content');
       ok(raw.r.headers['cache-control'] === 'no-cache' && !!raw.r.headers.etag, 'index no-cache + etag');
       ok((await fetch(S.base + '/', { headers: { 'If-None-Match': raw.r.headers.etag } })).status === 304, 'index 304');
-      const js = await fetch(S.base + '/js/app.js?v=13');
+      const js = await fetch(S.base + '/js/app.js?v=14');
       ok(js.status === 200 && /immutable/.test(js.headers.get('cache-control')), 'versioned js immutable');
       ok((await fetch(S.base + '/assets/logo-mark.png')).headers.get('content-type') === 'image/png', 'png');
       ok((await fetch(S.base + '/css/nope.css')).status === 404, 'missing asset 404');
@@ -156,6 +156,20 @@ async function apiSuite(env, kind, tag) {
     await sleep(700);
     const md3 = (await req('GET', '/api/data', null, H)).j.data;
     ok(md3.meetings.length === 3 && md3.notes.length === md2.notes.length, T('tick idempotent'));
+
+    // المراقب: اطلاع فقط — يضيف روابطه فقط، وأي تعديل آخر يُتجاهل
+    const od = await req('GET', '/api/data', null, H);
+    const withO = Object.assign({}, od.j.data, { users: od.j.data.users.concat([{ id: 'u9', login: 'obs', name: 'مراقب', role: 'observer', pw: fnv('obs-pass1') }]),
+      projects: od.j.data.projects.map(p => Object.assign({}, p, { links: [{ id: 'l1', title: 'رابط اللجنة', url: 'https://a.example', by: 'u1' }] })) });
+    ok((await req('PUT', '/api/data', { rev: od.j.rev, data: withO }, H)).status === 200, T('admin adds observer'));
+    const OL = await req('POST', '/api/login', { login: 'obs', password: 'obs-pass1' }), OH = { Authorization: 'Bearer ' + OL.j.token };
+    const o1 = await req('GET', '/api/data', null, OH);
+    const oEdit = Object.assign({}, o1.j.data, { projects: o1.j.data.projects.map(p => Object.assign({}, p, { name: 'تغيير ممنوع', links: [{ id: 'l1', title: 'تخريب', url: 'https://x', by: 'u1' }, { id: 'l2', title: 'رابطي', url: 'https://b.example', by: 'u9' }] })), meetings: [] });
+    ok((await req('PUT', '/api/data', { rev: o1.j.rev, data: oEdit }, OH)).status === 200, T('observer put'));
+    const o2 = (await req('GET', '/api/data', null, H)).j.data, op = o2.projects[0];
+    ok(op.name !== 'تغيير ممنوع' && op.links.length === 2 && op.links[0].title === 'رابط اللجنة' && op.links[1].title === 'رابطي' && o2.meetings.length === 3, T('observer limited to own links'));
+    const o3 = await req('GET', '/api/data', null, H);
+    ok((await req('PUT', '/api/data', { rev: o3.j.rev, data: Object.assign({}, o3.j.data, { users: o3.j.data.users.filter(u => u.id !== 'u9') }) }, H)).status === 200, T('admin removes observer'));
     ok(new RegExp('storage: ' + kind).test(S.log), T('startup log'));
 
     // بقاء كل شيء بعد إعادة التشغيل
@@ -230,7 +244,7 @@ async function pgSuite() {
     const LC = await SC.req('POST', '/api/login', { login: 'm', password: 'member123' });
     ok(LC.status === 200, 'legacy password works after migration');
     const dc = await SC.req('GET', '/api/data', null, { Authorization: 'Bearer ' + LC.j.token });
-    ok(dc.j && dc.j.rev === 2073 && dc.j.data.users.length === 2 && dc.j.data.users[0].id === 'u1' && dc.j.data.projects[0].name === 'قديم', 'legacy data intact (rev 2072 +1 for the hash upgrade · order · projects)');
+    ok(dc.j && dc.j.rev === 2074 && dc.j.data.users.length === 2 && dc.j.data.users[0].id === 'u1' && dc.j.data.projects[0].name === 'قديم', 'legacy data intact (rev 2072 +1 roles +1 hash upgrade · order · projects)');
     await SC.stop();
 
     // د. MIGRATE_ON_START=false مع ترحيلات ناقصة ⇒ الخادم يرفض البدء
@@ -256,6 +270,18 @@ async function pgSuite() {
   for (const f of ['server.js', 'js/app.js', 'db/migrate.js', 'db/store-pg.js', 'db/import-store.js', 'db/export-store.js'])
     try { execFileSync(process.execPath, ['--check', path.join(ROOT, f)]); ok(true) } catch (e) { ok(false, 'syntax: ' + f) }
   await apiSuite(baseEnv({ DATA_DIR: path.join(TMP, 'data') }), 'file', 'file');
+  // بيانات قديمة: «مراقب» القديم (المتدرب) يتحول إلى «متدرب» مرة واحدة عند التشغيل
+  {
+    const dir = path.join(TMP, 'legacy'); fs.mkdirSync(dir, { recursive: true });
+    const doc = seedDoc(); doc.users.push({ id: 'u7', login: 'tr', name: 'متدرب قديم', role: 'observer', pw: fnv('x') });
+    fs.writeFileSync(path.join(dir, 'store.json'), JSON.stringify({ rev: 5, doc }));
+    const S = await startServer(baseEnv({ DATA_DIR: dir }));
+    const st = JSON.parse(fs.readFileSync(path.join(dir, 'store.json'), 'utf8'));
+    ok(st.doc.roles2 === 1 && st.doc.users.find(u => u.id === 'u7').role === 'trainee' && /observer account\(s\) are now trainee/.test(S.log), 'legacy observer → trainee');
+    await S.stop(); const S2 = await startServer(baseEnv({ DATA_DIR: dir }));
+    ok(JSON.parse(fs.readFileSync(path.join(dir, 'store.json'), 'utf8')).rev === st.rev, 'role migration runs once');
+    await S2.stop();
+  }
   await pgSuite();
   fs.rmSync(TMP, { recursive: true, force: true });
   console.log(`${fail ? 'FAILED' : 'OK'} ${pass}/${pass + fail}`);

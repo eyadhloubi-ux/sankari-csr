@@ -23,6 +23,7 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
 const TOKEN_DAYS = 30;
 const MAX_BODY = 25 * 1024 * 1024;
+const FILE_MAX = (Number(process.env.FILE_MAX_MB) || 25) * 1024 * 1024;
 
 /* ---------- كلمات المرور ---------- */
 const normD = s => String(s == null ? '' : s)
@@ -78,7 +79,9 @@ async function makeStore() {
       await fsp.writeFile(path.join(DATA_DIR, 'backups', 'store-' + new Date().toISOString().slice(0, 10) + '.json'), j);
     },
     // إشعارات الجهاز في وضع الملف: data/push.json
-    ...filePush(path.join(DATA_DIR, 'push.json'))
+    ...filePush(path.join(DATA_DIR, 'push.json')),
+    // الملفات المرفوعة في وضع الملف: data/files/<id>.bin + <id>.json
+    ...fileFiles(path.join(DATA_DIR, 'files'))
   };
 }
 
@@ -92,6 +95,15 @@ function filePush(file) {
     async subAdd(uid, sub, ua) { const m = await load(); m.subs = m.subs.filter(x => x.sub.endpoint !== sub.endpoint); m.subs.push({ uid, sub, ua: String(ua || '').slice(0, 200) }); await flush() },
     async subDel(endpoint) { const m = await load(); m.subs = m.subs.filter(x => x.sub.endpoint !== endpoint); await flush() },
     async subsOf(uids) { const m = await load(); return m.subs.filter(x => uids.includes(x.uid)) }
+  };
+}
+
+function fileFiles(dir) {
+  const safe = id => /^[\w-]{6,64}$/.test(id);
+  return {
+    async fileAdd(f) { await fsp.mkdir(dir, { recursive: true }); await fsp.writeFile(path.join(dir, f.id + '.bin'), f.data); await fsp.writeFile(path.join(dir, f.id + '.json'), JSON.stringify({ id: f.id, name: f.name, type: f.type, size: f.size, uid: f.uid })) },
+    async fileGet(id, withData) { if (!safe(id)) return null; try { const m = JSON.parse(await fsp.readFile(path.join(dir, id + '.json'), 'utf8')); if (withData) m.data = await fsp.readFile(path.join(dir, id + '.bin')); return m } catch (e) { return null } },
+    async fileDel(id) { if (!safe(id)) return; await fsp.rm(path.join(dir, id + '.bin'), { force: true }); await fsp.rm(path.join(dir, id + '.json'), { force: true }) }
   };
 }
 
@@ -120,6 +132,14 @@ function readBody(req) {
     let n = 0; const parts = [];
     req.on('data', c => { n += c.length; if (n > MAX_BODY) { bad(Object.assign(new Error('too large'), { code: 413 })); req.destroy() } else parts.push(c) });
     req.on('end', () => { try { ok(parts.length ? JSON.parse(Buffer.concat(parts).toString('utf8')) : {}) } catch (e) { bad(Object.assign(e, { code: 400 })) } });
+    req.on('error', bad);
+  });
+}
+function readRaw(req, max) {
+  return new Promise((ok, bad) => {
+    let n = 0; const parts = [];
+    req.on('data', c => { n += c.length; if (n > max) { bad(Object.assign(new Error('too large'), { code: 413 })); req.destroy() } else parts.push(c) });
+    req.on('end', () => ok(Buffer.concat(parts)));
     req.on('error', bad);
   });
 }
@@ -157,7 +177,9 @@ function serveStatic(req, res) {
 
 /* ---------- واجهة البيانات ---------- */
 async function api(req, res, route) {
-  const auth = () => { const h = req.headers.authorization || ''; return readToken(h.replace(/^Bearer\s+/i, '')) };
+  // الرمز من ترويسة Authorization، أو من ?t= لروابط تنزيل الملفات (الرابط يُفتح مباشرة في المتصفح)
+  const qtok = new URL(req.url, 'http://x').searchParams.get('t');
+  const auth = () => { const h = req.headers.authorization || ''; return readToken(h ? h.replace(/^Bearer\s+/i, '') : qtok) };
 
   if (route === 'state' && req.method === 'GET') {
     const s = await getState();
@@ -198,7 +220,7 @@ async function api(req, res, route) {
 
   if (route === 'data' && req.method === 'GET') {
     const q = new URL(req.url, 'http://x').searchParams.get('rev');
-    const tok = req.headers.authorization.replace(/^Bearer\s+/i, ''), extra = tokenLeft(tok) < 25 * 864e5 ? { token: makeToken(uid) } : {};
+    const tok = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || qtok, extra = tokenLeft(tok) < 25 * 864e5 ? { token: makeToken(uid) } : {};
     if (q && Number(q) === s0.rev) return send(res, 200, Object.assign({ rev: s0.rev, same: true }, extra));
     return send(res, 200, Object.assign({ rev: s0.rev, data: strip(s0.doc) }, extra));
   }
@@ -240,6 +262,36 @@ async function api(req, res, route) {
       const rev = await putState(s.doc);
       send(res, 200, { rev });
     });
+  }
+
+  // الملفات: رفع (جسم الطلب هو الملف نفسه) · تنزيل · حذف
+  if (route === 'files' && req.method === 'POST') {
+    const len = Number(req.headers['content-length'] || 0);
+    if (len > FILE_MAX) { req.resume(); return send(res, 413, { error: 'too_large', max: FILE_MAX }) }
+    const data = await readRaw(req, FILE_MAX);
+    if (!data.length) return send(res, 400, { error: 'empty' });
+    let name = 'ملف'; try { name = decodeURIComponent(req.headers['x-file-name'] || '') || name } catch (e) {}
+    name = name.replace(/[\\/\r\n"]/g, '_').slice(0, 180);
+    const type = String(req.headers['content-type'] || 'application/octet-stream').split(';')[0].slice(0, 120);
+    const id = 'f' + Date.now().toString(36) + crypto.randomBytes(6).toString('hex');
+    await store.fileAdd({ id, name, type, size: data.length, uid, data });
+    return send(res, 200, { id, name, type, size: data.length });
+  }
+  if (route.startsWith('files/') && (req.method === 'GET' || req.method === 'HEAD')) {
+    const f = await store.fileGet(route.slice(6), true);
+    if (!f) return send(res, 404, { error: 'not_found' });
+    const inline = /^(image\/|application\/pdf$|text\/plain$|video\/|audio\/)/.test(f.type) && !new URL(req.url, 'http://x').searchParams.has('dl');
+    const ascii = f.name.replace(/[^\x20-\x7e]/g, '_');
+    res.writeHead(200, { 'Content-Type': f.type, 'Content-Length': f.data.length, 'Cache-Control': 'private, max-age=86400', 'X-Content-Type-Options': 'nosniff',
+      'Content-Disposition': (inline ? 'inline' : 'attachment') + '; filename="' + ascii + '"; filename*=UTF-8\'\'' + encodeURIComponent(f.name) });
+    return res.end(req.method === 'HEAD' ? undefined : f.data);
+  }
+  if (route.startsWith('files/') && req.method === 'DELETE') {
+    const f = await store.fileGet(route.slice(6), false);
+    if (!f) return send(res, 200, { ok: true });
+    if (f.uid !== uid && !me.admin && me.role !== 'member') return send(res, 403, { error: 'forbidden' });
+    await store.fileDel(f.id);
+    return send(res, 200, { ok: true });
   }
 
   // إشعارات الجهاز

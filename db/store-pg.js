@@ -5,6 +5,7 @@
  *   csr_users               الحسابات، كل حساب صف (مع تجزئة كلمة المرور)
  *   csr_backup              نسخة يومية من المستند الكامل (مع الحسابات)
  *   csr_push_sub · csr_kv   اشتراكات إشعارات الجهاز ومفاتيح VAPID
+ *   csr_files               الملفات المرفوعة (004)
  * الخادم يرى مستنداً واحداً {users, projects, ...} كما كان؛ هذه الطبقة تفصل الحسابات وتجمعها.
  */
 const { Pool } = require('pg');
@@ -96,7 +97,11 @@ function createPgStore(pool) {
     },
     async subDel(endpoint) { await pool.query('DELETE FROM csr_push_sub WHERE endpoint=$1', [endpoint]) },
     async subsOf(uids) { const r = await pool.query('SELECT uid, sub FROM csr_push_sub WHERE uid = ANY($1::text[])', [uids]); return r.rows },
-    async subOk(endpoint) { await pool.query('UPDATE csr_push_sub SET last_ok=now() WHERE endpoint=$1', [endpoint]) }
+    async subOk(endpoint) { await pool.query('UPDATE csr_push_sub SET last_ok=now() WHERE endpoint=$1', [endpoint]) },
+    // الملفات المرفوعة (الترحيل 004)
+    async fileAdd(f) { await pool.query('INSERT INTO csr_files (id, name, type, size, uid, data) VALUES ($1,$2,$3,$4,$5,$6)', [f.id, f.name, f.type, f.size, f.uid, f.data]) },
+    async fileGet(id, withData) { const r = await pool.query('SELECT id, name, type, size, uid' + (withData ? ', data' : '') + ' FROM csr_files WHERE id=$1', [id]); return r.rows[0] || null },
+    async fileDel(id) { await pool.query('DELETE FROM csr_files WHERE id=$1', [id]) }
   };
 }
 

@@ -445,7 +445,7 @@ const runread=r=>r.msgs.slice(r.seen[me().id]||0).filter(m=>m.u!==me().id).lengt
 const pendDec=p=>p.requests.filter(r=>r.kind==='dec'&&!r.decision);
 const isLateR=r=>r.kind==='req'?fileLate(r):(!r.done&&!!r.deadline&&r.deadline<TODAY);
 const dueChip=r=>r.deadline&&!r.done?'<span class="duec'+(isLateR(r)?' late':'')+'">'+(isLateR(r)?ic('alert'):ic('cal'))+deadline(r.deadline)+'</span>':'';
-function defPerm(u,p){if(u.admin||u.role==='member')return{plan:1,found:1,exec:1,links:1};if(u.role==='observer')return{plan:1,found:1,exec:1,links:1};if(u.role==='trainee')return{plan:0,found:0,exec:1,links:1};const mine=p.managerId===u.id?1:0;return{plan:0,found:0,exec:mine,links:mine}}
+function defPerm(u,p){if(u.admin||u.role==='member')return{plan:1,found:1,exec:1,links:1};if(u.role==='observer')return{plan:1,found:1,exec:1,links:1};if(u.role==='trainee')return{plan:0,found:0,exec:1,links:1};if(u.role==='staff'){const m2=(p.staffIds||[]).includes(u.id)?1:0;return{plan:0,found:0,exec:m2,links:m2}}const mine=p.managerId===u.id?1:0;return{plan:0,found:0,exec:mine,links:mine}}
 function permOf(u,p){const o=data.perm&&data.perm[u.id]&&data.perm[u.id][p.id];return o||defPerm(u,p)}
 const canTab=(p,t)=>!!permOf(me(),p)[t==='dec'?'exec':t];
 const canSee=p=>TABS.some(t=>canTab(p,t[0]));
@@ -486,7 +486,7 @@ function renderTop(){
   $('#meetBtn').classList.toggle('on',ui.view==='meet'||ui.view==='meetOne');const pi=myPendInv().length;$('#meetN').hidden=!pi;$('#meetN').textContent=pi;
   const nu=nUnread();$('#bellw').innerHTML='<button class="tb bell'+(ui.bell?' on':'')+'" type="button" data-a="bell" aria-label="الإشعارات" aria-expanded="'+!!ui.bell+'"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 004 0"/></svg>'+(nu?'<span class="rb">'+(nu>99?'99+':nu)+'</span>':'')+'</button>'+(ui.bell?bellHtml():'');
   let h='<button type="button" data-a="menu" aria-expanded="'+ui.menu+'"><span class="nm">'+esc(u.name)+'</span>'+av(u.id)+'</button>';
-  if(ui.menu)h+='<div class="menu"><div class="mg">'+(u.admin?'مسؤول النظام · ':'')+(RL[u.role]||'')+'</div><button type="button" data-a="myPw">'+ic('edit')+'تغيير كلمة المرور</button>'+(u.admin||u.role==='member'?'<button type="button" data-a="backup">'+ic('down')+'نسخة احتياطية</button>':'')+(u.admin?'<button type="button" data-a="restore">'+ic('up')+'استيراد نسخة احتياطية</button>'+(SRV.on?'':'<button type="button" data-a="reset">'+ic('reset')+'استعادة البيانات الأولية</button>'):'')+'<hr>'+(isStandalone()?'':'<button type="button" data-a="install">'+ic('down')+'تنزيل التطبيق</button>')+(pushState()==='on'?'':pushState()==='no'?'':'<button type="button" data-a="pushOn">'+ic('alert')+'تفعيل إشعارات الجهاز</button>')+'<hr><button type="button" data-a="logout">'+ic('back')+'تسجيل الخروج</button><div class="note">'+(SRV.on?'البيانات محفوظة على الخادم ومشتركة بين الجميع':'نسخة محلية · البيانات في هذا المتصفح فقط')+'<br>الإصدار 14</div></div>';
+  if(ui.menu)h+='<div class="menu"><div class="mg">'+(u.admin?'مسؤول النظام · ':'')+(RL[u.role]||'')+'</div><button type="button" data-a="myPw">'+ic('edit')+'تغيير كلمة المرور</button>'+(u.admin||u.role==='member'?'<button type="button" data-a="backup">'+ic('down')+'نسخة احتياطية</button>':'')+(u.admin?'<button type="button" data-a="restore">'+ic('up')+'استيراد نسخة احتياطية</button>'+(SRV.on?'':'<button type="button" data-a="reset">'+ic('reset')+'استعادة البيانات الأولية</button>'):'')+'<hr>'+(isStandalone()?'':'<button type="button" data-a="install">'+ic('down')+'تنزيل التطبيق</button>')+(pushState()==='on'?'':pushState()==='no'?'':'<button type="button" data-a="pushOn">'+ic('alert')+'تفعيل إشعارات الجهاز</button>')+'<hr><button type="button" data-a="logout">'+ic('back')+'تسجيل الخروج</button><div class="note">'+(SRV.on?'البيانات محفوظة على الخادم ومشتركة بين الجميع':'نسخة محلية · البيانات في هذا المتصفح فقط')+'<br>الإصدار 15</div></div>';
   $('#uchip').innerHTML=h}
 
 /* auth */
@@ -507,6 +507,7 @@ function renderRoles(){const u0=cur();if(!u0.admin){go('home');return}
   let h='<button class="back" type="button" data-a="home">'+ic('back')+'المشاريع</button><div class="ph-row"><h2>الأدوار والحسابات</h2><span class="n">'+data.users.length+'</span><span class="sp"></span><button class="btn primary" type="button" data-a="addUser">'+ic('plus')+'إضافة شخص</button></div>';
   h+='<div class="grp">أعضاء اللجنة</div><div class="users">'+data.users.filter(u=>u.role==='member').map(row).join('')+'</div>';
   h+='<div class="grp">المدراء التنفيذيون</div><div class="users">'+(data.users.filter(u=>u.role==='manager').map(row).join('')||'<div class="urow note-s">لا يوجد بعد</div>')+'</div>';
+  h+='<div class="grp">الأعضاء التنفيذيون · كالمدير التنفيذي في مشاريعهم دون طلب قرارات، ويُحدَّدون من نموذج المشروع</div><div class="users">'+(data.users.filter(u=>u.role==='staff').map(row).join('')||'<div class="urow note-s">لا يوجد بعد</div>')+'</div>';
   h+='<div class="grp">المتدربون · صلاحيات المدير التنفيذي في الإدارة التنفيذية، ويضيفون روابط المشروع</div><div class="users">'+(data.users.filter(u=>u.role==='trainee').map(row).join('')||'<div class="urow note-s">لا يوجد بعد</div>')+'</div>';
   h+='<div class="grp">المراقبون · اطلاع فقط على المشاريع دون أي تعديل، ويضيفون روابط المشروع</div><div class="users">'+(data.users.filter(u=>u.role==='observer').map(row).join('')||'<div class="urow note-s">لا يوجد بعد</div>')+'</div>';
   $('#view').innerHTML='<div class="wrap in">'+h+'</div>'}
@@ -516,7 +517,7 @@ function credModal(u,pw){
 function userForm(u){const isNew=!u;const pw=tmpPw();
   modal({title:isNew?'إضافة شخص':'تعديل الحساب',submit:isNew?'إنشاء الحساب':'حفظ',
     body:'<div class="f"><label for="un">الاسم</label><input class="fi" id="un" name="name" value="'+esc(u?u.name:'')+'" data-req></div>'+
-      '<div class="two"><div class="f"><label for="ul">اسم المستخدم</label><input class="fi" id="ul" name="login" dir="ltr" value="'+esc(u?u.login:'')+'" data-req></div><div class="f"><label for="ur">الدور</label><select id="ur" name="role"><option value="member"'+(u&&u.role==='member'?' selected':'')+'>عضو لجنة</option><option value="manager"'+(u&&u.role==='manager'?' selected':'')+'>مدير تنفيذي</option><option value="trainee"'+(u&&u.role==='trainee'?' selected':'')+'>متدرب</option><option value="observer"'+(u&&u.role==='observer'?' selected':'')+'>مراقب (اطلاع فقط)</option></select></div></div>'+
+      '<div class="two"><div class="f"><label for="ul">اسم المستخدم</label><input class="fi" id="ul" name="login" dir="ltr" value="'+esc(u?u.login:'')+'" data-req></div><div class="f"><label for="ur">الدور</label><select id="ur" name="role"><option value="member"'+(u&&u.role==='member'?' selected':'')+'>عضو لجنة</option><option value="manager"'+(u&&u.role==='manager'?' selected':'')+'>مدير تنفيذي</option><option value="staff"'+(u&&u.role==='staff'?' selected':'')+'>عضو تنفيذي</option><option value="trainee"'+(u&&u.role==='trainee'?' selected':'')+'>متدرب</option><option value="observer"'+(u&&u.role==='observer'?' selected':'')+'>مراقب (اطلاع فقط)</option></select></div></div>'+
       (isNew?'<div class="f"><label for="up">كلمة مرور مؤقتة</label><input class="fi" id="up" name="pw" dir="ltr" value="'+pw+'" data-req><span class="help">يغيّرها صاحب الحساب عند أول دخول</span></div>':'')+
       '<label class="chk"><input type="checkbox" name="admin"'+(u&&u.admin?' checked':'')+(u&&u.id===cur().id?' disabled':'')+'> مسؤول النظام (يدير الحسابات والصلاحيات)</label>',
     onSubmit:(v,f)=>{const login=v.login.toLowerCase().replace(/\s+/g,'');const adm=f.querySelector('[name=admin]').checked;
@@ -526,7 +527,7 @@ function userForm(u){const isNew=!u;const pw=tmpPw();
 function accessForm(u){
   const ps=data.projects,full=u.admin;
   modal({title:'الوصول للمشاريع · '+u.name,submit:'حفظ',
-    body:(full?'<p class="note-s">مسؤول النظام يصل إلى كل المشاريع والتبويبات.</p>':'<p class="note-s">'+(u.role==='member'?'عضو اللجنة يصل إلى كل شيء افتراضياً.':u.role==='observer'?'المراقب يطّلع على كل التبويبات افتراضياً دون أي تعديل، ويضيف روابط المشروع. أزل علامة ما لا تريده أن يراه.':u.role==='trainee'?'المتدرب يعمل في الإدارة التنفيذية كالمدير التنفيذي، ويضيف روابط المشروع.':'المدير يصل إلى الإدارة التنفيذية لمشاريعه فقط افتراضياً.')+'</p>')+
+    body:(full?'<p class="note-s">مسؤول النظام يصل إلى كل المشاريع والتبويبات.</p>':'<p class="note-s">'+(u.role==='member'?'عضو اللجنة يصل إلى كل شيء افتراضياً.':u.role==='observer'?'المراقب يطّلع على كل التبويبات افتراضياً دون أي تعديل، ويضيف روابط المشروع. أزل علامة ما لا تريده أن يراه.':u.role==='trainee'?'المتدرب يعمل في الإدارة التنفيذية كالمدير التنفيذي، ويضيف روابط المشروع.':u.role==='staff'?'العضو التنفيذي يصل إلى الإدارة التنفيذية وروابط المشاريع التي أُضيف إليها من نموذج المشروع.':'المدير يصل إلى الإدارة التنفيذية لمشاريعه فقط افتراضياً.')+'</p>')+
       '<table class="acc-t"><thead><tr><th>المشروع</th>'+PTABS.map(t=>'<th>'+t[1]+'</th>').join('')+'</tr></thead><tbody>'+ps.map(p=>{const x=permOf(u,p);return '<tr><td>'+esc(p.name)+(p.managerId===u.id?' <span class="pill2">مديره</span>':'')+'</td>'+PTABS.map(t=>'<td><input type="checkbox" data-p="'+p.id+'" data-t="'+t[0]+'" aria-label="'+esc(p.name)+' · '+t[1]+'"'+(x[t[0]]?' checked':'')+(full?' disabled':'')+'></td>').join('')+'</tr>'}).join('')+'</tbody></table>'+
       (full?'':'<button class="btn sm ghost" type="button" id="defP" style="align-self:flex-start">الرجوع للافتراضي</button>'),
     after:f=>{const d=f.querySelector('#defP');if(d)d.onclick=()=>{ps.forEach(p=>{const x=defPerm(u,p);PTABS.forEach(t=>{f.querySelector('[data-p="'+p.id+'"][data-t="'+t[0]+'"]').checked=!!x[t[0]]})})}},
@@ -626,7 +627,7 @@ function stratView(p){const ed=isM(),st=p.stages,bx=isBoxes(p),nn=sNoun(p);
   if(bx){const num=new Map(st.map((s,i)=>[s.id,i+1]));
     if(v==='rows')return h+'<div class="bxrows">'+st.map(s=>stCard(p,s,num.get(s.id),ed,true)).join('')+'</div>';
     return h+'<div class="bxgrid">'+st.map(s=>stCard(p,s,num.get(s.id),ed,true)).join('')+(ed?'<button type="button" class="sg-add big" data-a="stAdd" data-next="1">'+ic('plus')+'ملف جديد</button>':'')+'</div>'}
-  const cols=stCols(st);let n=0;const num=new Map();cols.forEach(cl=>cl.forEach(s=>num.set(s.id,++n)));
+  const cols=stCols(stagesEff(p));let n=0;const num=new Map();cols.forEach(cl=>cl.forEach(s=>num.set(s.id,++n)));
   const addPar=i=>ed?'<button type="button" class="sg-add" data-a="stAdd" data-col="'+i+'">'+ic('plus')+'بالتوازي</button>':'';
   if(v==='tl')return h+'<div class="vtl">'+cols.map((cl,i)=>{const cs=colState(cl);
       return '<div class="vt-g c-'+cs+'"><span class="vt-dot">'+(cs==='done'?ic('check'):i+1)+'</span><div class="vt-b">'+(cl.length>1?'<span class="vt-par">'+cl.length+' مراحل متوازية</span>':'')+'<div class="vt-cards'+(cl.length>1?' multi':'')+'">'+cl.map(s=>stCard(p,s,num.get(s.id),ed,true)).join('')+'</div>'+addPar(i)+'</div></div>'}).join('')+
@@ -645,7 +646,7 @@ function drawFlow(){const w=$('#flow');if(!w)return;const inn=w.querySelector('.
     const dn=p.stages.find(x=>x.id===a);const cls=dn&&dn.status==='done'?'ok':dn&&dn.status==='hold'?'hold':s.status==='disc'?'disc':'';
     g+='<path class="'+cls+'" d="M'+x1+' '+y1+' C'+(x1-dx)+' '+y1+' '+(x2+dx)+' '+y2+' '+x2+' '+y2+'" marker-end="url(#ah)"/>'}));
   svg.innerHTML=g}
-function removeStage(p,s){p.stages.forEach(x=>{if((x.after||[]).includes(s.id))x.after=[...new Set(x.after.filter(a=>a!==s.id).concat(s.after||[]))]});p.stages=p.stages.filter(x=>x!==s)}
+function removeStage(p,s){p.stages.concat(p.joints||[]).forEach(x=>{if((x.after||[]).includes(s.id))x.after=[...new Set(x.after.filter(a=>a!==s.id).concat(s.after||[]))]});p.stages=p.stages.filter(x=>x!==s)}
 function stageForm(s,preset){const p=proj(ui.pid),st=p.stages,isNew=!s,bx=isBoxes(p),nn=sNoun(p);
   const block=s?descOf(st,s.id):new Set(),opts=st.filter(x=>!block.has(x.id));
   const after=s?(s.after||[]):(preset||[]);
@@ -664,6 +665,7 @@ function stageForm(s,preset){const p=proj(ui.pid),st=p.stages,isNew=!s,bx=isBoxe
       const dl=f.querySelector('#gdel');if(dl)dl.onclick=()=>confirmBox('حذف '+(bx?'الملف':'المرحلة'),'سيُحذف «'+s.name+'»'+(bx?'.':'، وتتصل المراحل التي بعدها بما قبلها.'),'حذف',()=>{removeStage(p,s);touch(p,'found');save();render()})},
     onSubmit:(v,f)=>{let af=s?(s.after||[]):[];
       if(!bx){af=[];const ps=v.pos||'start';if(ps.startsWith('after:'))af=[ps.slice(6)];else if(ps.startsWith('par:')){const o=st.find(x=>x.id===ps.slice(4));af=o?(o.after||[]).slice():[]}else if(ps==='adv')af=[...f.querySelectorAll('[name=after]:checked')].map(x=>x.value)}
+      if(!bx&&s)af=af.concat((s.after||[]).filter(id=>(p.joints||[]).some(j=>j.id===id)&&!af.includes(id)));
       const o={name:v.name,when:v.when||'',status:disc?'disc':(v.status||s.status),note:v.note||'',after:af,u:me().id,at:Date.now()};
       if(s)Object.assign(s,o);else st.push(Object.assign({id:uid('g')},o));
       touch(p,'found');setSeen(p.id,'found');save();setTimeout(()=>{render();if(isNew)toast('أُضيف «'+v.name+'» للمناقشة')},0)}})}
@@ -694,7 +696,7 @@ const DRAG='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9"
 function opsView(p){const ed=isM(),ops=p.ops,v=['list','board','table'].includes(prefs.ov)?prefs.ov:'list',ON=opNums(p);
   const all=ON.view.flatMap(o=>{const IN=itNums(p,o);return IN.view.map(it=>({o,it,s:itState(p,it),code:ON.no.get(o.id)+'.'+IN.no.get(it.id)}))});const n=k=>all.filter(x=>x.s===k).length;
   let h='<div class="kpis"><div class="kp"><b>'+ops.length+'</b><small>ملفات التطوير</small></div><div class="kp a"><b>'+n('draft')+'</b><small>مهام لم تُرحَّل</small></div><div class="kp b"><b>'+n('sent')+'</b><small>مرحّلة قيد العمل</small></div><div class="kp d"><b>'+n('done')+'</b><small>منجزة</small></div></div>';
-  h+='<div class="bar-h" style="margin-top:18px"><h2>ملفات التطوير</h2><span class="sp"></span>'+(ops.length?segH('ov',[['list','ملفات','list'],['board','لوحة','board'],['table','جدول','table']],v):'')+(ed?'<button class="btn sm primary" type="button" data-a="newOp">'+ic('plus')+'ملف تطوير</button>':'')+'</div>';
+  h+='<div class="bar-h" style="margin-top:18px"><h2>ملفات التطوير</h2>'+(ops.length&&v==='list'?foldAll('ops'):'')+'<span class="sp"></span>'+(ops.length?segH('ov',[['list','ملفات','list'],['board','لوحة','board'],['table','جدول','table']],v):'')+(ed?'<button class="btn sm primary" type="button" data-a="newOp">'+ic('plus')+'ملف تطوير</button>':'')+'</div>';
   if(!ops.length)return h+'<div class="empty"><span class="e">'+ic('folder')+'</span><b>لا ملفات تطوير بعد</b><span>مثال: التطبيق، مسار التطوع، الفعاليات، الميديا</span>'+(ed?'<button class="btn primary" type="button" data-a="newOp">'+ic('plus')+'أول ملف</button>':'')+'</div>';
   if(v==='board'){const colH=(k,t)=>{const xs=all.filter(x=>x.s===k);return '<div class="bcol c-'+k+'"><div class="bc-h"><b>'+t+'</b><span class="n">'+xs.length+'</span></div>'+(xs.map(x=>{const nw=isNewMark(x.it,'found');
       return '<div class="bcard'+(nw?' isnew':'')+'"><span class="code">'+x.code+'</span><b>'+esc(x.it.t)+(nw?' '+NEW:'')+'</b><small>'+esc(x.o.name)+'</small><div class="row">'+itCtl(p,x.o,x.it,k,ed)+itTools(p,x.o,x.it,k)+'</div></div>'}).join('')||'<span class="bempty">لا شيء</span>')+'</div>'};
@@ -804,9 +806,9 @@ function linkKind(u){const h=hostOf(u);
   if(/figma|canva/.test(h))return['des','تصميم','<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16"/></svg>'];
   return['web','رابط',linkIcon]}
 function linksTab(p){const ed=canTab(p,'links'),ls=p.links||[];
-  let h='<div class="bar-h"><h2>روابط المشروع</h2><span class="sp"></span>'+(ed?'<button class="btn sm primary" type="button" data-a="newLink">'+ic('plus')+'رابط جديد</button>':'')+'</div>';
+  let h='<div class="bar-h"><h2>روابط المشروع وملفاته</h2><span class="sp"></span>'+(ed&&SRV.on?'<button class="btn sm" type="button" data-a="upFile">'+ic('up')+'رفع ملف</button>':'')+(ed?'<button class="btn sm primary" type="button" data-a="newLink">'+ic('plus')+'رابط جديد</button>':'')+'</div>';
   if(!ls.length)return h+'<div class="empty"><span class="e">'+linkIcon+'</span><b>لا روابط بعد</b><span>العروض والوثائق والمجلدات الخاصة بالمشروع</span></div>';
-  return h+'<div class="links">'+ls.map(l=>{const k=linkKind(l.url),nw=isNewMark(l,'links');
+  return h+'<div class="links">'+ls.map(l=>{const fc=linkCard(p,l);if(fc)return fc;const k=linkKind(l.url),nw=isNewMark(l,'links');
     return '<div class="lk-card'+(nw?' isnew':'')+'"><a class="lk-main" href="'+esc(l.url)+'" target="_blank" rel="noopener noreferrer"><span class="lk-ic k-'+k[0]+'">'+k[2]+'</span><span class="tx"><b>'+esc(l.title)+(nw?' '+NEW:'')+'</b><small>'+k[1]+' · <span class="ltr">'+esc(hostOf(l.url))+'</span></small>'+(l.note?'<span class="lk-note">'+esc(l.note)+'</span>':'')+(l.by&&user(l.by)?'<span class="lk-by">'+av(l.by,'sm')+'أضافه '+esc(uname(l.by))+'</span>':'')+'</span></a>'+
       (canLink(p,l)?'<span class="tools"><button class="tb" type="button" data-a="editLink" data-id="'+l.id+'" aria-label="تعديل">'+ic('edit')+'</button><button class="tb del" type="button" data-a="delLink" data-id="'+l.id+'" aria-label="حذف">'+ic('trash')+'</button></span>':'')+'</div>'}).join('')+'</div>'}
 function linkForm(l){const p=proj(ui.pid);p.links=p.links||[];
@@ -827,7 +829,7 @@ function execTab(p){
   if(tks.length){const tc=st=>tks.filter(t=>t.status===st).length,tl=tks.filter(tLate).length;
     h+='<div class="tkstats"><span class="lbl">'+ic('tasks')+'المهام الفرعية · '+tks.length+'</span><span class="tsc"><i class="d0"></i>لم تبدأ <b>'+tc('todo')+'</b></span><span class="tsc"><i class="d1"></i>قيد التنفيذ <b>'+tc('doing')+'</b></span><span class="tsc"><i class="d2"></i>منجزة <b>'+tc('done')+'</b></span>'+(tl?'<span class="tsc late"><i class="d3"></i>متأخرة <b>'+tl+'</b></span>':'')+'<span class="tbar">'+['done','doing','todo'].map(st=>'<i class="s-'+st+'" style="width:'+(tc(st)/tks.length*100)+'%"></i>').join('')+'</span></div>'}
   h+='<p class="lastact">'+(m?'آخر نشاط للمدير التنفيذي: '+(mAt?when(mAt):'لا يوجد بعد'):'')+'</p>';
-  h+='<div class="bar-h"><h2>الملفات</h2><span class="sp"></span>'+(isM()&&canTab(p,'exec')?'<button class="btn sm primary" type="button" data-a="newR">'+ic('plus')+'ملف جديد</button>':'')+'</div>';
+  h+='<div class="bar-h"><h2>الملفات</h2>'+(files.length?foldAll('exec'):'')+'<span class="sp"></span>'+(isM()&&canTab(p,'exec')?'<button class="btn sm primary" type="button" data-a="newR">'+ic('plus')+'ملف جديد</button>':'')+'</div>';
   if(!files.length)return h+'<div class="empty"><span class="e">'+ic('chat')+'</span><b>لا ملفات بعد</b><span>تصل هنا ملفات التخطيط التشغيلي عند اعتماد أول مهمة منها، أو افتح ملفاً جديداً</span></div>';
   const ON=opNums(p),opos=new Map(ON.view.map((o,i)=>[o.id,i])),noOf=r=>r.src&&r.src.oid&&ON.no.has(r.src.oid)?ON.no.get(r.src.oid):0;
   const last=r=>r.msgs.length?r.msgs[r.msgs.length-1].at:r.at;
@@ -838,7 +840,7 @@ function execTab(p){
   return h}
 function decTab(p){const ds=p.requests.filter(r=>r.kind==='dec'),pend=ds.filter(r=>!r.decision),ok=ds.filter(r=>r.decision&&!r.decision.rej),rej=ds.filter(r=>r.decision&&r.decision.rej);
   let h='<div class="kpis k3"><div class="kp a"><b>'+pend.length+'</b><small>بانتظار قرار اللجنة</small></div><div class="kp d"><b>'+ok.length+'</b><small>معتمدة</small></div><div class="kp"><b>'+rej.length+'</b><small>لم تُعتمد</small></div></div>';
-  h+='<div class="bar-h" style="margin-top:18px"><h2>القرارات</h2><span class="sp"></span>'+(canTab(p,'dec')?'<button class="btn sm amber" type="button" data-a="newD">'+ic('pause')+'طلب قرار</button>':'')+'</div>';
+  h+='<div class="bar-h" style="margin-top:18px"><h2>القرارات</h2><span class="sp"></span>'+(canTab(p,'dec')&&!isStaff()?'<button class="btn sm amber" type="button" data-a="newD">'+ic('pause')+'طلب قرار</button>':'')+'</div>';
   if(!ds.length)return h+'<div class="empty"><span class="e">'+ic('gavel')+'</span><b>لا قرارات بعد</b><span>أي أمر يتوقف على موافقة اللجنة يُطلب من هنا</span></div>';
   if(pend.length)h+='<div class="pend">'+pend.map(r=>{const n=runread(r);return '<button type="button" class="dcard'+(isLateR(r)?' late':'')+'" data-a="openR" data-id="'+r.id+'">'+(n?'<span class="rb">'+n+'</span>':'')+'<b>'+esc(r.title)+'</b><span class="meta">'+ic('pause')+(r.options&&r.options.length?r.options.length+' خيارات':'بانتظار قرار')+(r.deadline?' · '+deadline(r.deadline):'')+' · '+esc(shortName(r.by))+'</span></button>'}).join('')+'</div>';
   const done=[...ok,...rej].sort((a,b)=>b.decision.at-a.decision.at);
@@ -857,7 +859,7 @@ function openR(rid){
     const pm=r.msgs[i-1],showWho=!mine&&(!pm||pm.u!==m.u||dayKey(pm.at)!==dk);
     const canDel=(mine&&fresh)||cur().admin,canEd=!!m.t&&!r.done&&((mine&&fresh)||cur().admin);const lks=m.likes||[],iL=lks.includes(me().id),canLike=canTab(p,'exec')&&!isRO();
     const acts=(canLike?'<button class="like'+(iL?' on':'')+'" type="button" data-a="like" data-i="'+i+'" aria-label="إعجاب" aria-pressed="'+iL+'">'+HEART+'</button>':'')+(canEd?'<button class="bed" type="button" data-a="editMsg" data-id="'+m.id+'" aria-label="تعديل الرسالة" title="تعديل">'+ic('edit')+'</button>':'')+(canDel?'<button class="bdel" type="button" data-a="delMsg" data-i="'+i+'" aria-label="حذف الرسالة" title="حذف">'+ic('trash')+'</button>':'');
-    b+='<div class="bub'+(mine?' me':'')+(mg?' mg':'')+(ui.editMsg===m.id?' editing':'')+(showWho?'':' cont')+'">'+(acts?'<span class="bacts">'+acts+'</span>':'')+(showWho?'<span class="who2">'+esc(mu?mu.name:'—')+'<em> · '+roleLbl(mu)+'</em></span>':'')+(m.t?'<p>'+msgHtml(m)+'</p>':'')+(m.files||[]).map(f=>'<span class="file">'+ic('clip')+esc(f.name)+' · '+kb(f.size)+'</span>').join('')+(lks.length?'<span class="rx"><span class="lk" title="'+esc(lks.map(uname).join('، '))+'">'+HEART+lks.length+'</span></span>':'')+'<time>'+(m.ed?'معدّلة · ':'')+hm(m.at)+'</time></div>'});
+    b+='<div class="bub'+(mine?' me':'')+(mg?' mg':'')+(ui.editMsg===m.id?' editing':'')+(showWho?'':' cont')+'">'+(acts?'<span class="bacts">'+acts+'</span>':'')+(showWho?'<span class="who2">'+esc(mu?mu.name:'—')+'<em> · '+roleLbl(mu)+'</em></span>':'')+(m.t?'<p>'+msgHtml(m)+'</p>':'')+(m.files||[]).map(attHtml).join('')+(lks.length?'<span class="rx"><span class="lk" title="'+esc(lks.map(uname).join('، '))+'">'+HEART+lks.length+'</span></span>':'')+'<time>'+(m.ed?'معدّلة · ':'')+hm(m.at)+'</time></div>'});
   if(r.kind==='req'&&r.done)b+='<div class="donebar">'+ic('check')+'أُنجزت كل مهام الملف</div>';
   let top='';
   if(r.kind==='dec'){
@@ -878,15 +880,19 @@ function openR(rid){
     tx.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();doSubmit($('#cf'))}});
     const cf=$('#cfile');cf.addEventListener('change',()=>{const fc=$('#fc');fc.hidden=!cf.files.length;fc.textContent=cf.files.length});
     const em=ui.editMsg&&r.msgs.find(x=>x.id===ui.editMsg);if(em){tx.value=em.t;growTx(tx)}else ui.editMsg=null;
-    $('#cf')._submit=()=>{const t=tx.value.trim(),files=Array.from(cf.files).map(f=>({name:f.name,size:f.size}));
+    $('#cf')._submit=async()=>{const t=tx.value.trim(),raw=Array.from(cf.files);let files=raw.map(f=>({name:f.name,size:f.size}));
       if(em){if(!t)return;if(t!==em.t){const old=em.men||[];em.t=t;em.ed=Date.now();em.men=mentionsIn(t,p,r);const nw=em.men.filter(x=>!old.includes(x));notify(nw,'men',shortName(me().id)+' ذكرك في: '+r.title,t.slice(0,160),{p:p.id,tab:rt(r),r:r.id});touch(p,rt(r));save()}ui.editMsg=null;openR(r.id);return}
       if(!t&&!files.length)return;
+      if(raw.length&&SRV.on){const sb=$('#cf button[type=submit]'),big=raw.find(f=>f.size>FILE_MAX);if(big){toast('«'+big.name+'» أكبر من 25 ميغا','error');return}
+        if(sb){if(sb.disabled)return;sb.disabled=true}tx.disabled=true;files=[];
+        try{for(let k=0;k<raw.length;k++){const j=await uploadFile(raw[k],pc=>{toast&&(sb&&(sb.title=pc+'%'))});files.push({id:j.id,name:j.name,size:j.size,type:j.type})}}
+        catch(e){if(sb)sb.disabled=false;tx.disabled=false;toast('تعذّر رفع المرفق، حاول مجدداً','error');return}}
       const men=t?mentionsIn(t,p,r):[];
       r.msgs.push(Object.assign({id:uid('c'),u:me().id,at:Date.now(),t,files},men.length?{men}:{}));r.seen[me().id]=r.msgs.length;touch(p,rt(r));setSeen(p.id,rt(r));
       notify(men,'men',shortName(me().id)+' ذكرك في: '+r.title,(t||'').slice(0,160),{p:p.id,tab:rt(r),r:r.id});
       notify(chatPeople(p,r).filter(x=>!men.includes(x)),'msg',shortName(me().id)+' · '+r.title,(t||files.map(x=>x.name).join('، ')).slice(0,160),{p:p.id,tab:rt(r),r:r.id});save();openR(r.id)}}
 }
-const roleLbl=u=>!u?'':u.role==='manager'?'المدير التنفيذي':u.role==='observer'?'مراقب':u.role==='trainee'?'متدرب':'اللجنة';
+const roleLbl=u=>!u?'':u.role==='manager'?'المدير التنفيذي':u.role==='observer'?'مراقب':u.role==='trainee'?'متدرب':u.role==='staff'?'عضو تنفيذي':'اللجنة';
 const shortName=id=>{const u=user(id);return u?u.name.replace(/^(د\.|م\.|أ\.)\s*/,'').split(' ')[0]:''};
 const codeChip=r=>{const p=proj(ui.pid),c=p&&r.src&&r.src.oid?codeOf(p,r.src.oid):'';return c?'<span class="code">'+c+'</span>':''};
 const curR=()=>{const c=layer().querySelector('.chat');return c?proj(ui.pid).requests.find(x=>x.id===c.dataset.id):null};
@@ -913,13 +919,14 @@ function projectForm(p){
   modal({title:p?'تعديل المشروع':'مشروع جديد',submit:p?'حفظ':'إنشاء',
     body:'<div class="f"><label for="pn">اسم المشروع</label><input class="fi" id="pn" name="name" value="'+esc(p?p.name:'')+'" data-req></div>'+
       '<div class="f"><span class="lb">الصورة</span><div class="drop"><span id="pv">'+prev()+'</span><span class="tx"><b>اختر صورة</b>أو اسحبها هنا</span><input type="file" id="pi" accept="image/*" aria-label="صورة المشروع"></div></div>'+
-      '<div class="two"><div class="f"><label for="pm">العضو المسؤول</label><select id="pm" name="memberId">'+opts('member',p?p.memberId:me().id)+'</select></div><div class="f"><label for="pe">المدير التنفيذي</label><select id="pe" name="managerId">'+opts('manager',p?p.managerId:'','لم يُحدَّد')+'</select></div></div>',
+      '<div class="two"><div class="f"><label for="pm">العضو المسؤول</label><select id="pm" name="memberId">'+opts('member',p?p.memberId:me().id)+'</select></div><div class="f"><label for="pe">المدير التنفيذي</label><select id="pe" name="managerId">'+opts('manager',p?p.managerId:'','لم يُحدَّد')+'</select></div></div>'+
+      (data.users.some(u=>u.role==='staff')?'<div class="f"><span class="lb">الأعضاء التنفيذيون</span><div class="stfs">'+data.users.filter(u=>u.role==='staff').map(u=>'<label class="ivp"><input type="checkbox" name="staff" value="'+u.id+'"'+(p&&(p.staffIds||[]).includes(u.id)?' checked':'')+'>'+av(u.id,'sm')+esc(u.name)+'</label>').join('')+'</div><span class="help">يعملون في الإدارة التنفيذية لهذا المشروع كالمدير التنفيذي، دون طلب قرارات.</span></div>':''),
     extra:p?'<button class="btn danger" type="button" id="dp">'+ic('trash')+'حذف</button>':'',
     after:f=>{const fi=f.querySelector('#pi');fi.addEventListener('change',async()=>{if(!fi.files[0])return;try{img=await readImg(fi.files[0]);f.querySelector('#pv').innerHTML=prev()}catch(e){toast('تعذّرت قراءة الصورة','error')}});
       const dp=f.querySelector('#dp');if(dp)dp.onclick=()=>confirmBox('حذف المشروع','سيُحذف «'+p.name+'» بكل محتواه.','حذف',()=>{data.projects=data.projects.filter(x=>x!==p);save();go('home')})},
-    onSubmit:v=>{
-      if(p){const o={name:p.name,img:p.img,memberId:p.memberId,managerId:p.managerId};const mg=v.managerId||null;if(mg!==p.managerId)touch(p,'exec');Object.assign(p,{name:v.name,img,memberId:v.memberId,managerId:mg});if(!save()){Object.assign(p,o);return false}render()}
-      else{const np={id:uid('p'),links:[],name:v.name,img,memberId:v.memberId,managerId:v.managerId||null,access:{plan:false,found:false},sections:SECS.map(t=>({id:uid('s'),title:t[0],fmt:t[1],body:''})),steps:[],requests:[]};data.projects.unshift(np);
+    onSubmit:(v,f)=>{const stf=[...f.querySelectorAll('[name=staff]:checked')].map(x=>x.value);
+      if(p){const o={name:p.name,img:p.img,memberId:p.memberId,managerId:p.managerId,staffIds:p.staffIds};if(J(stf)!==J(p.staffIds||[])){p.staffIds=stf;touch(p,'exec')}const mg=v.managerId||null;if(mg!==p.managerId)touch(p,'exec');Object.assign(p,{name:v.name,img,memberId:v.memberId,managerId:mg});if(!save()){Object.assign(p,o);return false}render()}
+      else{const np={id:uid('p'),links:[],name:v.name,img,memberId:v.memberId,managerId:v.managerId||null,staffIds:stf,access:{plan:false,found:false},sections:SECS.map(t=>({id:uid('s'),title:t[0],fmt:t[1],body:''})),steps:[],requests:[]};data.projects.unshift(np);
         if(!save()){data.projects.shift();return false}go('project',np.id,'plan')}}})}
 function reqForm(kind){const p=proj(ui.pid),dec=kind==='dec';
   modal({title:dec?'بحاجة لقرار':'ملف جديد',submit:'إرسال',
@@ -972,8 +979,8 @@ const A={
     onSubmit:v=>{const s={id:uid('t'),name:v.name,date:v.date,subs:[],u:me().id,at:Date.now()};p.steps.push(s);ui.focusSub=s.id;touch(p,'found');setSeen(p.id,'found');save();setTimeout(()=>{render();ui.focusSub=null},0)}})},
   fold:d=>{if(d.full==='1')ui.openDone[d.id]=!ui.openDone[d.id];else ui.folded[d.id]=!ui.folded[d.id];render()},
   editDue:()=>{const p=proj(ui.pid),r=p.requests.find(x=>x.id===layer().querySelector('.chat').dataset.id);modal({title:'موعد الملف',body:'<div class="f"><label for="nd">مطلوب قبل</label><input class="fi" id="nd" type="date" name="d" value="'+esc(r.deadline||D(7))+'" data-req></div>',onSubmit:v=>{r.deadline=v.d;touch(p,rt(r));setSeen(p.id,rt(r));save();setTimeout(()=>{render();openR(r.id)},0)}})},
-  newLink:()=>linkForm(null),editLink:d=>{const p=proj(ui.pid),l=(p.links||[]).find(x=>x.id===d.id);if(!canLink(p,l))return toast('يعدّله صاحبه أو اللجنة','error');linkForm(l)},
-  delLink:d=>{const p=proj(ui.pid),l=p.links.find(x=>x.id===d.id);if(!canLink(p,l))return toast('يحذفه صاحبه أو اللجنة','error');confirmBox('حذف الرابط','سيُحذف رابط «'+l.title+'».','حذف',()=>{p.links=p.links.filter(x=>x!==l);touch(p,'links');save();render()})},
+  newLink:()=>linkForm(null),editLink:d=>{const p=proj(ui.pid),l=(p.links||[]).find(x=>x.id===d.id);if(!canLink(p,l))return toast('يعدّله صاحبه أو اللجنة','error');if(l.file)return modal({title:'تعديل الملف',body:'<div class="f"><label for="ft">العنوان</label><input class="fi" id="ft" name="t" value="'+esc(l.title)+'" data-req></div><div class="f"><label for="fn">ملاحظة (اختياري)</label><input class="fi" id="fn" name="n" value="'+esc(l.note||'')+'"></div>',onSubmit:v=>{l.title=v.t;l.note=v.n||'';l.u=me().id;l.at=Date.now();touch(p,'links');save();setTimeout(render,0)}});linkForm(l)},
+  delLink:d=>{const p=proj(ui.pid),l=p.links.find(x=>x.id===d.id);if(!canLink(p,l))return toast('يحذفه صاحبه أو اللجنة','error');confirmBox(l.file?'حذف الملف':'حذف الرابط',l.file?'سيُحذف الملف «'+l.title+'» نهائياً من الخادم.':'سيُحذف رابط «'+l.title+'».','حذف',()=>{p.links=p.links.filter(x=>x!==l);if(l.file)delFile(l.file.id);touch(p,'links');save();render()})},
   delMsg:d=>{const p=proj(ui.pid),r=p.requests.find(x=>x.id===layer().querySelector('.chat').dataset.id),i=+d.i,m=r.msgs[i];if(!m)return;if(Date.now()-m.at>=864e5){toast('لا يمكن حذف رسالة مضى عليها يوم','error');return}
     const dec={};r.msgs.splice(i,1);Object.keys(r.seen).forEach(k=>{if(r.seen[k]>i){r.seen[k]--;dec[k]=1}});save();openR(r.id);
     toast('حُذفت الرسالة',null,()=>{r.msgs.splice(i,0,m);Object.keys(dec).forEach(k=>r.seen[k]++);save();openR(r.id)})},
@@ -1256,7 +1263,7 @@ function renderMeetOne(){const m=data.meetings.find(x=>x.id===ui.mid);
 
 function meetForm(m){const isNew=!m;const d=m?new Date(m.at):(()=>{const x=new Date();x.setDate(x.getDate()+1);x.setHours(18,0,0,0);return x})();
   const inv=m?m.inv||[]:[me().id];
-  const roles=[['member','اللجنة'],['manager','المديرون التنفيذيون'],['trainee','المتدربون'],['observer','المراقبون']];
+  const roles=[['member','اللجنة'],['manager','المديرون التنفيذيون'],['staff','الأعضاء التنفيذيون'],['trainee','المتدربون'],['observer','المراقبون']];
   const ppl=roles.map(r=>{const us=data.users.filter(u=>(u.role||'member')===r[0]||(r[0]==='member'&&u.admin&&!u.role));if(!us.length)return '';
     return '<div class="ivg"><div class="ivh"><b>'+r[1]+'</b><button type="button" class="xp" data-all="'+r[0]+'">تحديد الكل</button></div>'+us.map(u=>'<label class="ivp"><input type="checkbox" name="inv" value="'+u.id+'" data-r="'+r[0]+'"'+(inv.includes(u.id)?' checked':'')+'>'+av(u.id,'sm')+esc(u.name)+'</label>').join('')+'</div>'}).join('');
   modal({title:isNew?'اجتماع جديد':'تعديل الاجتماع',submit:isNew?'إنشاء وإرسال الدعوات':'حفظ',
@@ -1368,16 +1375,80 @@ function optsWire(f){const l=f.querySelector('#optl');if(!l)return;const renum=(
   l.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.name==='opt'){e.preventDefault();e.stopPropagation();const r=e.target.closest('.optr');if(!r.nextElementSibling){f.querySelector('#optadd').click()}else r.nextElementSibling.querySelector('input').focus()}},true)}
 const optsOf=f=>[...f.querySelectorAll('[name=opt]')].map(x=>x.value.trim()).filter(Boolean);
 
-/* ---------- لوحة المراحل: مربعات تُسحب بحرية وأسهم يدوية ---------- */
-const BW=232,BH=120,BGX=74,BGY=30;
-function autoPos(st){const cols=stCols(st),pos={};cols.forEach((cl,i)=>cl.forEach((s,j)=>{pos[s.id]={x:24+i*(BW+BGX),y:24+j*(BH+BGY)}}));return pos}
-function boardPos(p){const st=p.stages,ap=autoPos(st),out={},placed=[];
+/* ===================== الإصدار 15: العضو التنفيذي · إظهار/إخفاء الكل · نقاط الربط · رفع الملفات ===================== */
+RL.staff='عضو تنفيذي';
+const isStaff=()=>!!cur()&&cur().role==='staff';
+
+/* ---------- رفع الملفات ---------- */
+const FILE_MAX=25*1024*1024;
+const fileUrl=(f,dl)=>'api/files/'+encodeURIComponent(f.id)+'?t='+encodeURIComponent(SRV.token||'')+(dl?'&dl=1':'');
+function uploadFile(file,onPct){return new Promise((ok,bad)=>{
+  if(file.size>FILE_MAX)return bad(new Error('big'));
+  const x=new XMLHttpRequest();x.open('POST','api/files');x.setRequestHeader('Authorization','Bearer '+SRV.token);x.setRequestHeader('X-File-Name',encodeURIComponent(file.name));x.setRequestHeader('Content-Type',file.type||'application/octet-stream');
+  if(onPct&&x.upload)x.upload.onprogress=e=>{if(e.lengthComputable)onPct(Math.round(e.loaded/e.total*100))};
+  x.onload=()=>{let j={};try{j=JSON.parse(x.responseText)}catch(e){}if(x.status===200&&j.id)ok(j);else bad(new Error(x.status===413?'big':'fail'))};x.onerror=()=>bad(new Error('net'));x.send(file)})}
+const delFile=id=>{if(id&&SRV.on)call('DELETE','files/'+encodeURIComponent(id)).catch(()=>{})};
+function fileKind(n,t){const e=(String(n).split('.').pop()||'').toLowerCase();
+  if(/^image\//.test(t)||['jpg','jpeg','png','gif','webp','heic','svg'].includes(e))return ['img','صورة'];
+  if(e==='pdf')return ['pdf','PDF'];if(['doc','docx','odt','rtf'].includes(e))return ['doc','Word'];if(['xls','xlsx','csv','ods'].includes(e))return ['xls','Excel'];
+  if(['ppt','pptx','odp','key'].includes(e))return ['ppt','عرض تقديمي'];if(['zip','rar','7z'].includes(e))return ['zip','ملف مضغوط'];if(/^video\//.test(t))return ['vid','فيديو'];if(/^audio\//.test(t))return ['aud','صوت'];
+  return ['file',e?e.toUpperCase():'ملف']}
+const FIC='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg>';
+function fileForm(){const p=proj(ui.pid);p.links=p.links||[];let picked=null;
+  modal({title:'رفع ملف',submit:'رفع',body:'<div class="f"><span class="lb">الملف</span><label class="drop up"><span class="tx" id="upn"><b>اختر ملفاً</b>أو اسحبه هنا · حتى 25 ميغا</span><input type="file" id="upf" aria-label="الملف"></label></div><div class="f"><label for="upt">العنوان</label><input class="fi" id="upt" name="t" placeholder="يُكتب اسم الملف تلقائياً"></div><div class="f"><label for="upo">ملاحظة (اختياري)</label><input class="fi" id="upo" name="n"></div><div class="upbar" id="upb" hidden><i></i></div>',
+    after:f=>{const fi=f.querySelector('#upf');fi.addEventListener('change',()=>{picked=fi.files[0]||null;if(!picked)return;
+      if(picked.size>FILE_MAX){toast('الملف أكبر من 25 ميغا','error');picked=null;fi.value='';return}
+      f.querySelector('#upn').innerHTML='<b>'+esc(picked.name)+'</b>'+kb(picked.size);const t=f.querySelector('#upt');if(!t.value)t.value=picked.name.replace(/\.[^.]+$/,'')})},
+    onSubmit:(v,f)=>{if(!picked){toast('اختر ملفاً','error');return false}const btn=f.querySelector('button[type=submit]'),bar=f.querySelector('#upb');if(btn.disabled)return false;btn.disabled=true;bar.hidden=false;
+      uploadFile(picked,pc=>{bar.firstChild.style.width=pc+'%';btn.textContent=pc+'%'}).then(j=>{
+        p.links.push({id:uid('l'),title:v.t||picked.name,url:'',file:{id:j.id,name:j.name,size:j.size,type:j.type},note:v.n||'',u:me().id,by:me().id,at:Date.now()});
+        touch(p,'links');setSeen(p.id,'links');save();closeLayer();render();toast('رُفع الملف')
+      }).catch(e=>{btn.disabled=false;btn.textContent='رفع';bar.hidden=true;toast(e.message==='big'?'الملف أكبر من 25 ميغا':'تعذّر رفع الملف، حاول مجدداً','error')});return false}})}
+function linkCard(p,l){const nw=isNewMark(l,'links');
+  if(l.file){const k=fileKind(l.file.name,l.file.type);
+    return '<div class="lk-card'+(nw?' isnew':'')+'"><a class="lk-main" href="'+fileUrl(l.file)+'" target="_blank" rel="noopener"><span class="lk-ic f-'+k[0]+'">'+FIC+'<em>'+esc(k[0]==='file'?k[1].slice(0,4):k[0].toUpperCase())+'</em></span><span class="tx"><b>'+esc(l.title)+(nw?' '+NEW:'')+'</b><small>ملف · '+esc(k[1])+' · '+kb(l.file.size)+'</small>'+(l.note?'<span class="lk-note">'+esc(l.note)+'</span>':'')+(l.by&&user(l.by)?'<span class="lk-by">'+av(l.by,'sm')+'رفعه '+esc(uname(l.by))+'</span>':'')+'</span></a>'+
+      '<span class="tools"><a class="tb" href="'+fileUrl(l.file,1)+'" download aria-label="تنزيل" title="تنزيل">'+ic('down')+'</a>'+(canLink(p,l)?'<button class="tb" type="button" data-a="editLink" data-id="'+l.id+'" aria-label="تعديل">'+ic('edit')+'</button><button class="tb del" type="button" data-a="delLink" data-id="'+l.id+'" aria-label="حذف">'+ic('trash')+'</button>':'')+'</span></div>'}
+  return null}
+function attHtml(f){if(!f.id)return '<span class="file">'+ic('clip')+esc(f.name)+' · '+kb(f.size)+'</span>';
+  const k=fileKind(f.name,f.type);if(k[0]==='img')return '<a class="file img" href="'+fileUrl(f)+'" target="_blank" rel="noopener"><img src="'+fileUrl(f)+'" alt="'+esc(f.name)+'" loading="lazy"><span>'+esc(f.name)+'</span></a>';
+  return '<a class="file" href="'+fileUrl(f)+'" target="_blank" rel="noopener">'+ic('clip')+'<span>'+esc(f.name)+' · '+kb(f.size)+'</span>'+ic('down')+'</a>'}
+
+/* ---------- إظهار الكل / إخفاء الكل ---------- */
+function foldAll(kind){return '<span class="fall" role="group" aria-label="المهام"><button type="button" class="xp" data-a="allOpen" data-k="'+kind+'">إظهار الكل</button><span aria-hidden="true">·</span><button type="button" class="xp" data-a="allClose" data-k="'+kind+'">إخفاء الكل</button></span>'}
+Object.assign(A,{
+  allOpen:d=>{const p=proj(ui.pid);if(d.k==='ops')p.ops.forEach(o=>{delete ui.folded[o.id]});else p.requests.filter(r=>r.kind==='req').forEach(r=>{ui.rtOpen[r.id]=true});render()},
+  allClose:d=>{const p=proj(ui.pid);if(d.k==='ops')p.ops.forEach(o=>{ui.folded[o.id]=true});else{p.requests.filter(r=>r.kind==='req').forEach(r=>{ui.rtOpen[r.id]=false});ui.focusSub=null}render()},
+  upFile:()=>fileForm()
+});
+RO_OK.push('allOpen','allClose','upFile');
+
+/* ---------- نقاط الربط في لوحة المراحل ---------- */
+const joints=p=>p.joints||(p.joints=[]);
+const nodeOf=(p,id)=>p.stages.find(x=>x.id===id)||joints(p).find(x=>x.id===id);
+const isJ=(p,id)=>joints(p).some(x=>x.id===id);
+/* المراحل بتسلسلها الفعلي: السهم الداخل إلى نقطة ربط يعني ما قبل النقطة */
+function effAfter(p,ids,seen){seen=seen||new Set();const out=[];(ids||[]).forEach(id=>{if(seen.has(id))return;seen.add(id);if(p.stages.some(s=>s.id===id))out.push(id);else{const j=joints(p).find(x=>x.id===id);if(j)effAfter(p,j.after,seen).forEach(x=>out.push(x))}});return [...new Set(out)]}
+const stagesEff=p=>p.stages.map(s=>Object.assign({},s,{after:effAfter(p,s.after)}));
+function downstream(p,id){const all=p.stages.concat(joints(p)),out=new Set([id]);let ch=true;while(ch){ch=false;all.forEach(n=>{if(!out.has(n.id)&&(n.after||[]).some(a=>out.has(a))){out.add(n.id);ch=true}})}return out}
+function removeJoint(p,j){p.stages.concat(joints(p)).forEach(x=>{if((x.after||[]).includes(j.id))x.after=[...new Set(x.after.filter(a=>a!==j.id).concat(j.after||[]))]});p.joints=joints(p).filter(x=>x!==j)}
+
+/* ---------- لوحة المراحل: مربعات تُسحب بحرية، وأسهم يدوية، ونقاط ربط تجمع الأسهم أو توزّعها ---------- */
+const BW=232,BH=120,BGX=74,BGY=30,JD=22;
+function autoPos(p){const cols=stCols(stagesEff(p)),pos={};cols.forEach((cl,i)=>cl.forEach((s,j)=>{pos[s.id]={x:24+i*(BW+BGX),y:24+j*(BH+BGY)}}));return pos}
+function boardPos(p){const st=p.stages,ap=autoPos(p),out={},placed=[];
   st.filter(s=>s.x!=null&&s.y!=null).forEach(s=>{out[s.id]={x:s.x,y:s.y};placed.push(out[s.id])});
-  st.filter(s=>s.x==null||s.y==null).forEach(s=>{const q=Object.assign({},ap[s.id]||{x:24,y:24});while(placed.some(o=>Math.abs(o.x-q.x)<BW&&Math.abs(o.y-q.y)<BH))q.y+=BH+BGY;out[s.id]=q;placed.push(q)});return out}
+  st.filter(s=>s.x==null||s.y==null).forEach(s=>{const q=Object.assign({},ap[s.id]||{x:24,y:24});while(placed.some(o=>Math.abs(o.x-q.x)<BW&&Math.abs(o.y-q.y)<BH))q.y+=BH+BGY;out[s.id]=q;placed.push(q)});
+  /* نقطة بلا موضع (بعد الترتيب التلقائي): في منتصف ما قبلها وما بعدها */
+  const cen=id=>{const q=out[id];return q?{x:q.x+(isJ(p,id)?JD/2:BW/2),y:q.y+(isJ(p,id)?JD/2:BH/2)}:null};
+  for(let pass=0;pass<3;pass++)joints(p).forEach(j=>{if(j.x!=null&&j.y!=null){out[j.id]={x:j.x,y:j.y};return}
+    const ns=(j.after||[]).concat(p.stages.concat(joints(p)).filter(n=>(n.after||[]).includes(j.id)).map(n=>n.id)).map(cen).filter(Boolean);
+    if(ns.length)out[j.id]={x:Math.round(ns.reduce((a,c)=>a+c.x,0)/ns.length-JD/2),y:Math.round(ns.reduce((a,c)=>a+c.y,0)/ns.length-JD/2)};else out[j.id]={x:24,y:24}});
+  return out}
 function boardView(p,h,ed,num){const pos=boardPos(p);let W=0,H2=0;Object.values(pos).forEach(q=>{W=Math.max(W,q.x+BW+60);H2=Math.max(H2,q.y+BH+80)});
-  const tools=ed?'<div class="bd-bar"><span class="bd-tip">'+ic('flow')+'اسحب المربع لتحريكه، واسحب النقطة الزرقاء على طرفه إلى مربع آخر لرسم سهم. اضغط السهم لحذفه.</span><span class="sp"></span><button class="btn sm ghost" type="button" data-a="bdAuto">'+ic('reset')+'ترتيب تلقائي</button></div>':'';
-  return h+tools+'<div class="board'+(ed?' ed':'')+'" id="board"><div class="bd-in" style="width:'+Math.max(W,560)+'px;height:'+Math.max(H2,300)+'px"><svg class="bd-svg" aria-hidden="true"></svg>'+
-    p.stages.map(s=>'<div class="bd-node" data-node="'+s.id+'" style="inset-inline-start:'+pos[s.id].x+'px;top:'+pos[s.id].y+'px">'+stCard(p,s,num.get(s.id),ed)+(ed?'<span class="bd-grip" data-grip title="اسحب لتحريك المربع" aria-hidden="true"><svg viewBox="0 0 12 12"><circle cx="3" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="3" cy="9" r="1.2"/><circle cx="9" cy="9" r="1.2"/></svg></span><span class="bd-port" data-port="'+s.id+'" title="اسحب إلى مرحلة تالية لربطهما بسهم" aria-hidden="true"></span>':'')+'</div>').join('')+
+  const tools=ed?'<div class="bd-bar"><span class="bd-tip">'+ic('flow')+'اسحب المربع لتحريكه. اسحب النقطة الزرقاء إلى مربع لرسم سهم، أو إلى مكان فارغ لإنشاء نقطة ربط تكمل منها. اضغط السهم أو النقطة لحذفهما.</span><span class="sp"></span><button class="btn sm ghost" type="button" data-a="bdAuto">'+ic('reset')+'ترتيب تلقائي</button></div>':'';
+  return h+tools+'<div class="sboard'+(ed?' ed':'')+'" id="board"><div class="bd-in" style="width:'+Math.max(W,560)+'px;height:'+Math.max(H2,300)+'px"><svg class="bd-svg" aria-hidden="true"></svg>'+
+    p.stages.map(s=>'<div class="bd-node" data-node="'+s.id+'" style="inset-inline-start:'+pos[s.id].x+'px;top:'+pos[s.id].y+'px">'+stCard(p,s,num.get(s.id),ed)+(ed?'<span class="bd-grip" data-grip title="اسحب لتحريك المربع" aria-hidden="true"><svg viewBox="0 0 12 12"><circle cx="3" cy="3" r="1.2"/><circle cx="9" cy="3" r="1.2"/><circle cx="3" cy="9" r="1.2"/><circle cx="9" cy="9" r="1.2"/></svg></span><span class="bd-port" data-port="'+s.id+'" title="اسحب إلى مرحلة تالية أو إلى مكان فارغ" aria-hidden="true"></span>':'')+'</div>').join('')+
+    joints(p).map(j=>'<div class="bd-node bd-j" data-node="'+j.id+'" style="inset-inline-start:'+pos[j.id].x+'px;top:'+pos[j.id].y+'px"><span class="bd-dot" data-jdot title="'+(ed?'نقطة ربط · اسحبها لتحريكها، واضغطها لحذفها':'نقطة ربط')+'"></span>'+(ed?'<span class="bd-port sm" data-port="'+j.id+'" title="اسحب إلى مرحلة"></span>':'')+'</div>').join('')+
     '</div></div>'}
 function bdAnchor(A,B,R){const ac={x:A.left+A.width/2-R.left,y:A.top+A.height/2-R.top},bc={x:B.left+B.width/2-R.left,y:B.top+B.height/2-R.top},dx=bc.x-ac.x,dy=bc.y-ac.y;
   if(Math.abs(dx)>=Math.abs(dy)*.8){const s=Math.sign(dx)||-1;return {x1:ac.x+s*A.width/2,y1:ac.y,x2:bc.x-s*(B.width/2+3),y2:bc.y,h:true}}
@@ -1386,45 +1457,52 @@ function bdPath(a){const d=a.h?Math.max(30,Math.abs(a.x2-a.x1)/2):Math.max(30,Ma
   return 'M'+a.x1+' '+a.y1+' C'+(a.x1+sx*d)+' '+(a.y1+sy*d)+' '+(a.x2-sx*d)+' '+(a.y2-sy*d)+' '+a.x2+' '+a.y2}
 function drawBoard(){const w=$('#board');if(!w)return;const inn=w.querySelector('.bd-in'),svg=w.querySelector('svg'),p=proj(ui.pid);if(!p||!inn)return;
   const R=inn.getBoundingClientRect(),ed=w.classList.contains('ed');svg.setAttribute('width',inn.offsetWidth);svg.setAttribute('height',inn.offsetHeight);
-  const box=id=>{const e=inn.querySelector('[data-node="'+id+'"] .sgc');return e?e.getBoundingClientRect():null};
+  const box=id=>{const e=inn.querySelector('[data-node="'+id+'"] .sgc,[data-node="'+id+'"] .bd-dot');return e?e.getBoundingClientRect():null};
+  const srcSt=id=>{const n=nodeOf(p,id);if(!n)return null;if(!isJ(p,id))return n;const a=effAfter(p,[id]).map(x=>p.stages.find(s=>s.id===x)).filter(Boolean);return a.length?{status:a.every(s=>s.status==='done')?'done':a.some(s=>s.status==='hold')?'hold':'todo'}:null};
   let g='<defs><marker id="bah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs>';
-  p.stages.forEach(s=>(s.after||[]).forEach(a=>{const A=box(a),B=box(s.id);if(!A||!B)return;const d=bdPath(bdAnchor(A,B,R));
-    const dn=p.stages.find(x=>x.id===a),cls=dn&&dn.status==='done'?'ok':dn&&dn.status==='hold'?'hold':s.status==='disc'?'disc':'';
-    g+='<g class="bd-e '+cls+'"><path class="ln" d="'+d+'" marker-end="url(#bah)"/>'+(ed?'<path class="hit" d="'+d+'" data-from="'+a+'" data-to="'+s.id+'"><title>حذف السهم</title></path>':'')+'</g>'}));
+  p.stages.concat(joints(p)).forEach(s=>(s.after||[]).forEach(a=>{const A=box(a),B=box(s.id);if(!A||!B)return;const tj=isJ(p,s.id),an=bdAnchor(A,B,R);if(tj){an.x2+=an.h?Math.sign(an.x2-an.x1)*3:0;an.y2+=an.h?0:Math.sign(an.y2-an.y1)*3}const d=bdPath(an);
+    const dn=srcSt(a),cls=dn&&dn.status==='done'?'ok':dn&&dn.status==='hold'?'hold':s.status==='disc'?'disc':'';
+    g+='<g class="bd-e '+cls+'"><path class="ln" d="'+d+'"'+(tj?'':' marker-end="url(#bah)"')+'/>'+(ed?'<path class="hit" d="'+d+'" data-from="'+a+'" data-to="'+s.id+'"><title>حذف السهم</title></path>':'')+'</g>'}));
   svg.innerHTML=g+'<path class="tmp" d="" marker-end="url(#bah)"/>'}
 let BD=null;
+function bdLink(p,src,tgt){const t=nodeOf(p,tgt),sn=nodeOf(p,src);if(!t||!sn)return;
+  if(downstream(p,tgt).has(src))return toast('لا يمكن: هذا السهم يصنع حلقة في التسلسل','error');
+  if((t.after||[]).includes(src))return toast('السهم موجود');
+  t.after=(t.after||[]).concat(src);t.u=me().id;t.at=Date.now();touch(p,'found');save();
+  if(!isJ(p,src)&&!isJ(p,tgt))toast('رُبطت: «'+sn.name+'» ← «'+t.name+'»')}
 document.addEventListener('pointerdown',e=>{const w=e.target.closest('#board.ed');if(!w||isRO()||(e.pointerType==='mouse'&&e.button!==0))return;
   const p=proj(ui.pid),inn=w.querySelector('.bd-in'),port=e.target.closest('[data-port]');
-  if(port){e.preventDefault();const src=port.dataset.port,R=()=>inn.getBoundingClientRect(),sb=inn.querySelector('[data-node="'+src+'"] .sgc').getBoundingClientRect(),tmp=w.querySelector('path.tmp');
+  if(port){e.preventDefault();const src=port.dataset.port,R=()=>inn.getBoundingClientRect(),se=inn.querySelector('[data-node="'+src+'"] .sgc,[data-node="'+src+'"] .bd-dot'),sb=se.getBoundingClientRect(),tmp=w.querySelector('path.tmp');
     BD={k:'link'};w.classList.add('linking');inn.querySelector('[data-node="'+src+'"]').classList.add('src');
     const move=ev=>{const r=R(),x2=ev.clientX-r.left,y2=ev.clientY-r.top,a=bdAnchor(sb,{left:ev.clientX-1,top:ev.clientY-1,width:2,height:2},r);a.x2=x2;a.y2=y2;tmp.setAttribute('d',bdPath(a));
       inn.querySelectorAll('.bd-node.tgt').forEach(n=>n.classList.remove('tgt'));const t=document.elementFromPoint(ev.clientX,ev.clientY),tn=t&&t.closest('[data-node]');if(tn&&tn.dataset.node!==src)tn.classList.add('tgt')};
     const end=ev=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);window.removeEventListener('pointercancel',end);w.classList.remove('linking');BD=null;
-      const t=ev.type==='pointerup'&&document.elementFromPoint(ev.clientX,ev.clientY),tn=t&&t.closest('[data-node]');
-      if(tn&&tn.dataset.node!==src){const s=p.stages.find(x=>x.id===tn.dataset.node);
-        if(descOf(p.stages,s.id).has(src))toast('لا يمكن: هذا السهم يصنع حلقة في التسلسل','error');
-        else if((s.after||[]).includes(src))toast('السهم موجود');
-        else{s.after=(s.after||[]).concat(src);s.u=me().id;s.at=Date.now();touch(p,'found');save();toast('رُبطت: «'+(p.stages.find(x=>x.id===src)||{}).name+'» ← «'+s.name+'»')}}
+      if(ev.type==='pointerup'){const t=document.elementFromPoint(ev.clientX,ev.clientY),tn=t&&t.closest('[data-node]');
+        if(tn&&tn.dataset.node!==src)bdLink(p,src,tn.dataset.node);
+        else if(!tn&&t&&t.closest('#board .bd-in')){const r=R(),rtl=getComputedStyle(inn).direction==='rtl',px=rtl?r.right-ev.clientX:ev.clientX-r.left,py=ev.clientY-r.top;
+          if(Math.hypot(ev.clientX-(sb.left+sb.width/2),ev.clientY-(sb.top+sb.height/2))>40){const j={id:uid('j'),x:Math.max(0,Math.round(px-JD/2)),y:Math.max(0,Math.round(py-JD/2)),after:[src],u:me().id,at:Date.now()};joints(p).push(j);touch(p,'found');save();toast('أُنشئت نقطة ربط، اسحب منها إلى المرحلة التالية')}}}
       render()};
     window.addEventListener('pointermove',move);window.addEventListener('pointerup',end);window.addEventListener('pointercancel',end);return}
   const node=e.target.closest('[data-node]');if(!node)return;
-  const grip=e.target.closest('[data-grip]');if(e.pointerType!=='mouse'&&!grip)return;
+  const jd=e.target.closest('[data-jdot]'),grip=e.target.closest('[data-grip]')||jd;if(e.pointerType!=='mouse'&&!grip)return;
   if(!grip&&e.target.closest('select,.sgc-f button'))return;
-  const s=p.stages.find(x=>x.id===node.dataset.node),rtl=getComputedStyle(inn).direction==='rtl',x0=e.clientX,y0=e.clientY;
+  const s=nodeOf(p,node.dataset.node);if(!s)return;const rtl=getComputedStyle(inn).direction==='rtl',x0=e.clientX,y0=e.clientY;
   const sx=parseFloat(node.style.insetInlineStart)||0,sy=parseFloat(node.style.top)||0;let moved=false,nx=sx,ny=sy;
   if(grip)e.preventDefault();BD={k:'move'};ui.dragging=true;
   const move=ev=>{const dx=(ev.clientX-x0)*(rtl?-1:1),dy=ev.clientY-y0;if(!moved&&Math.hypot(dx,dy)<5)return;if(!moved){moved=true;node.classList.add('moving')}
     nx=Math.max(0,Math.round((sx+dx)/8)*8);ny=Math.max(0,Math.round((sy+dy)/8)*8);node.style.insetInlineStart=nx+'px';node.style.top=ny+'px';
     if(nx+BW+40>inn.offsetWidth)inn.style.width=(nx+BW+60)+'px';if(ny+BH+60>inn.offsetHeight)inn.style.height=(ny+BH+80)+'px';drawBoard()};
   const end=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',end);window.removeEventListener('pointercancel',end);BD=null;ui.dragging=false;
-    if(!moved)return;node.classList.remove('moving');
+    if(!moved){if(jd){const j=s;confirmBox('حذف نقطة الربط','تُحذف النقطة، وتتصل الأسهم الداخلة إليها مباشرة بما بعدها.','حذف',()=>{removeJoint(p,j);touch(p,'found');save();render()})}return}
+    node.classList.remove('moving');
     const sup=ev=>{ev.stopPropagation();ev.preventDefault()};window.addEventListener('click',sup,{capture:true,once:true});setTimeout(()=>window.removeEventListener('click',sup,{capture:true}),60);
-    p.stages.forEach(x=>{if(x.x==null||x.y==null){const q=boardPos(p)[x.id];x.x=q.x;x.y=q.y}});s.x=nx;s.y=ny;save();drawBoard()};
+    const bp=boardPos(p);p.stages.concat(joints(p)).forEach(x=>{if(x.x==null||x.y==null){const q=bp[x.id];if(q){x.x=q.x;x.y=q.y}}});s.x=nx;s.y=ny;save();drawBoard()};
   window.addEventListener('pointermove',move);window.addEventListener('pointerup',end);window.addEventListener('pointercancel',end)});
-document.addEventListener('click',e=>{const h=e.target.closest('#board path.hit');if(!h||isRO())return;const p=proj(ui.pid),a=p.stages.find(x=>x.id===h.dataset.from),b=p.stages.find(x=>x.id===h.dataset.to);if(!a||!b)return;
-  confirmBox('حذف السهم','سيُحذف السهم من «'+a.name+'» إلى «'+b.name+'».','حذف',()=>{b.after=(b.after||[]).filter(x=>x!==a.id);b.u=me().id;b.at=Date.now();touch(p,'found');save();render();toast('حُذف السهم',null,()=>{b.after=(b.after||[]).concat(a.id);save();render()})})});
+document.addEventListener('click',e=>{const h=e.target.closest('#board path.hit');if(!h||isRO())return;const p=proj(ui.pid),a=nodeOf(p,h.dataset.from),b=nodeOf(p,h.dataset.to);if(!a||!b)return;
+  const nm=n=>n.name?'«'+n.name+'»':'نقطة الربط';
+  confirmBox('حذف السهم','سيُحذف السهم من '+nm(a)+' إلى '+nm(b)+'.','حذف',()=>{b.after=(b.after||[]).filter(x=>x!==a.id);b.u=me().id;b.at=Date.now();touch(p,'found');save();render();toast('حُذف السهم',null,()=>{b.after=(b.after||[]).concat(a.id);save();render()})})});
 window.addEventListener('resize',()=>{clearTimeout(window.__br);window.__br=setTimeout(()=>{if($('#board'))drawBoard()},120)});
-Object.assign(A,{bdAuto:()=>{const p=proj(ui.pid);confirmBox('ترتيب تلقائي','تُرتَّب المربعات حسب تسلسل الأسهم، وتضيع المواضع التي حرّكتها يدوياً. الأسهم لا تتغيّر.','رتّب',()=>{p.stages.forEach(s=>{delete s.x;delete s.y});save();render()})}});
+Object.assign(A,{bdAuto:()=>{const p=proj(ui.pid);confirmBox('ترتيب تلقائي','تُرتَّب المربعات ونقاط الربط حسب تسلسل الأسهم، وتضيع المواضع التي حرّكتها يدوياً. الأسهم لا تتغيّر.','رتّب',()=>{p.stages.concat(joints(p)).forEach(s=>{delete s.x;delete s.y});save();render()})}});
 
 boot();
 })();

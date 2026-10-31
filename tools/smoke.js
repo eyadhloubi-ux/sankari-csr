@@ -66,7 +66,7 @@ async function apiSuite(env, kind, tag) {
       ok(/<html/.test(zlib.gunzipSync(raw.b).toString()), 'index gunzip content');
       ok(raw.r.headers['cache-control'] === 'no-cache' && !!raw.r.headers.etag, 'index no-cache + etag');
       ok((await fetch(S.base + '/', { headers: { 'If-None-Match': raw.r.headers.etag } })).status === 304, 'index 304');
-      const js = await fetch(S.base + '/js/app.js?v=14');
+      const js = await fetch(S.base + '/js/app.js?v=15');
       ok(js.status === 200 && /immutable/.test(js.headers.get('cache-control')), 'versioned js immutable');
       ok((await fetch(S.base + '/assets/logo-mark.png')).headers.get('content-type') === 'image/png', 'png');
       ok((await fetch(S.base + '/css/nope.css')).status === 404, 'missing asset 404');
@@ -134,6 +134,21 @@ async function apiSuite(env, kind, tag) {
     ok((await req('POST', '/api/push/sub', { sub: fake }, H)).status === 200, T('push sub'));
     ok((await req('POST', '/api/push/unsub', { endpoint: fake.endpoint }, H)).status === 200, T('push unsub'));
 
+    // رفع الملفات · تنزيلها بالرمز في الرابط · حذفها · حد الحجم
+    const blob = Buffer.from('%PDF-1.4 ملف تجريبي ' + 'x'.repeat(5000));
+    const up = await fetch(S.base + '/api/files', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/pdf', 'X-File-Name': encodeURIComponent('تقرير الربع.pdf') }, H), body: blob });
+    const uj = await up.json().catch(() => ({}));
+    ok(up.status === 200 && uj.id && uj.size === blob.length && uj.name === 'تقرير الربع.pdf', T('file upload'));
+    ok((await fetch(S.base + '/api/files', { method: 'POST', body: blob })).status === 401, T('file upload needs login'));
+    const dl = await fetch(S.base + '/api/files/' + uj.id + '?t=' + encodeURIComponent(L.j.token));
+    const db = Buffer.from(await dl.arrayBuffer());
+    ok(dl.status === 200 && db.equals(blob) && dl.headers.get('content-type') === 'application/pdf' && /filename\*=UTF-8''/.test(dl.headers.get('content-disposition')), T('file download (?t=)'));
+    ok((await fetch(S.base + '/api/files/' + uj.id)).status === 401, T('file download needs token'));
+    ok((await fetch(S.base + '/api/files/' + uj.id + '?dl=1&t=' + encodeURIComponent(L.j.token))).headers.get('content-disposition').startsWith('attachment'), T('file ?dl=1 attachment'));
+    const bigUp = await fetch(S.base + '/api/files', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/zip' }, H), body: Buffer.alloc(25 * 1024 * 1024 + 10) }).catch(() => ({ status: 413 }));
+    ok(bigUp.status === 413, T('file over 25MB refused'));
+    ok((await req('DELETE', '/api/files/' + uj.id, null, H)).status === 200 && (await fetch(S.base + '/api/files/' + uj.id + '?t=' + encodeURIComponent(L.j.token))).status === 404, T('file delete'));
+
     // تجديد الجلسة تلقائياً: رمز قارب على الانتهاء يُستبدل برمز جديد
     const crypto = require('crypto'), sg = b => crypto.createHmac('sha256', 'smoke-secret').update(b).digest('base64url');
     const ob = Buffer.from(JSON.stringify({ u: 'u1', e: Date.now() + 3 * 864e5 })).toString('base64url');
@@ -200,9 +215,9 @@ async function pgSuite() {
     // أ. قاعدة جديدة: الترحيلات ثم كل فحوص الواجهة
     const A = await newDb(), envA = baseEnv({ DATABASE_URL: A.url });
     let r = await run('db/migrate.js', ['--status'], envA);
-    ok(r.code === 0 && /PENDING\s+001_core\.sql/.test(r.out) && /3 pending/.test(r.out), 'migrate:status on empty db');
+    ok(r.code === 0 && /PENDING\s+001_core\.sql/.test(r.out) && /4 pending/.test(r.out), 'migrate:status on empty db');
     r = await run('db/migrate.js', [], envA);
-    ok(r.code === 0 && /001_core\.sql/.test(r.out) && /002_users\.sql/.test(r.out) && /003_push\.sql/.test(r.out) && /schema 003/.test(r.out), 'migrate applies 001+002+003');
+    ok(r.code === 0 && /001_core\.sql/.test(r.out) && /002_users\.sql/.test(r.out) && /003_push\.sql/.test(r.out) && /004_files\.sql/.test(r.out) && /schema 004/.test(r.out), 'migrate applies 001..004');
     r = await run('db/migrate.js', [], envA);
     ok(r.code === 0 && /up to date/.test(r.out), 'migrate twice = no-op');
     await apiSuite(envA, 'postgres', 'pg');
@@ -240,7 +255,7 @@ async function pgSuite() {
     const legacy = seedDoc(); legacy.projects = [{ id: 'p9', name: 'قديم' }];
     await C.db.query("INSERT INTO csr_store (id, rev, doc) VALUES ('main', 2072, $1::jsonb)", [JSON.stringify(legacy)]);
     const SC = await startServer(baseEnv({ DATABASE_URL: C.url }));
-    ok(/migration applied: 002_users\.sql/.test(SC.log) && /schema 003/.test(SC.log), 'legacy db migrated on start');
+    ok(/migration applied: 002_users\.sql/.test(SC.log) && /schema 004/.test(SC.log), 'legacy db migrated on start');
     const LC = await SC.req('POST', '/api/login', { login: 'm', password: 'member123' });
     ok(LC.status === 200, 'legacy password works after migration');
     const dc = await SC.req('GET', '/api/data', null, { Authorization: 'Bearer ' + LC.j.token });

@@ -66,7 +66,7 @@ async function apiSuite(env, kind, tag) {
       ok(/<html/.test(zlib.gunzipSync(raw.b).toString()), 'index gunzip content');
       ok(raw.r.headers['cache-control'] === 'no-cache' && !!raw.r.headers.etag, 'index no-cache + etag');
       ok((await fetch(S.base + '/', { headers: { 'If-None-Match': raw.r.headers.etag } })).status === 304, 'index 304');
-      const js = await fetch(S.base + '/js/app.js?v=15');
+      const js = await fetch(S.base + '/js/app.js?v=16');
       ok(js.status === 200 && /immutable/.test(js.headers.get('cache-control')), 'versioned js immutable');
       ok((await fetch(S.base + '/assets/logo-mark.png')).headers.get('content-type') === 'image/png', 'png');
       ok((await fetch(S.base + '/css/nope.css')).status === 404, 'missing asset 404');
@@ -149,6 +149,12 @@ async function apiSuite(env, kind, tag) {
     ok(bigUp.status === 413, T('file over 25MB refused'));
     ok((await req('DELETE', '/api/files/' + uj.id, null, H)).status === 200 && (await fetch(S.base + '/api/files/' + uj.id + '?t=' + encodeURIComponent(L.j.token))).status === 404, T('file delete'));
 
+    // آخر ظهور: للمسؤول وأعضاء اللجنة فقط
+    const pr = await req('GET', '/api/presence', null, H);
+    ok(pr.status === 200 && pr.j.seen && pr.j.seen.u1 > Date.now() - 60000, T('presence for admin'));
+    const mT = (await req('POST', '/api/login', { login: 'm', password: 'member123' })).j.token;
+    ok((await req('GET', '/api/presence', null, { Authorization: 'Bearer ' + mT })).status === 200, T('presence for member'));
+
     // تجديد الجلسة تلقائياً: رمز قارب على الانتهاء يُستبدل برمز جديد
     const crypto = require('crypto'), sg = b => crypto.createHmac('sha256', 'smoke-secret').update(b).digest('base64url');
     const ob = Buffer.from(JSON.stringify({ u: 'u1', e: Date.now() + 3 * 864e5 })).toString('base64url');
@@ -168,6 +174,7 @@ async function apiSuite(env, kind, tag) {
     ok(m1 && m1.r24 && md2.notes.some(n => n.go && n.go.m === 'm1' && n.to.includes('u1')) && md2.notes.some(n => n.go && n.go.m === 'm1' && n.to.includes('u2') && /لم تؤكد/.test(n.t)), T('meeting 24h reminders'));
     ok(m3 && m2.nx === m3.id && m3.at === now - 3 * 36e5 + 7 * 864e5 && m3.agenda.length === 1 && m3.agenda[0].t === 'بند لم يُناقش' && m3.link === 'https://meet.example/x' && m3.linkAt > 0, T('series next session + agenda carry'));
     ok(md2.notes.some(n => n.k === 'inv' && n.go.m === (m3 && m3.id)), T('series invitation note'));
+    ok(!m3 || JSON.stringify(m3.pids || []) === '[]', T('series keeps project link'));
     await sleep(700);
     const md3 = (await req('GET', '/api/data', null, H)).j.data;
     ok(md3.meetings.length === 3 && md3.notes.length === md2.notes.length, T('tick idempotent'));

@@ -217,6 +217,12 @@ async function api(req, res, route) {
   const s0 = await getState();
   const me = s0 && s0.doc.users.find(u => u.id === uid);
   if (!me) return send(res, 401, { error: 'unauthorized' });
+  markSeen(uid);
+  // آخر ظهور: للمسؤول وأعضاء اللجنة فقط
+  if (route === 'presence' && req.method === 'GET') {
+    if (!me.admin && me.role !== 'member') return send(res, 403, { error: 'forbidden' });
+    return send(res, 200, { seen: Object.fromEntries(LAST) });
+  }
 
   if (route === 'data' && req.method === 'GET') {
     const q = new URL(req.url, 'http://x').searchParams.get('rev');
@@ -347,6 +353,13 @@ function migrateRoles() {
   });
 }
 
+/* ---------- آخر ظهور ----------
+ * كل طلب مسجَّل الدخول يحدّث وقت آخر ظهور صاحبه في الذاكرة، وتُحفظ في csr_kv ('lastseen') كل دقيقة إن تغيّرت. */
+const LAST = new Map(); let lastDirty = false;
+function markSeen(uid) { const n = Date.now(), o = LAST.get(uid) || 0; if (n - o > 30000) { LAST.set(uid, n); lastDirty = true } }
+async function loadSeen() { try { const v = await store.kvGet('lastseen'); if (v) Object.entries(JSON.parse(v)).forEach(([k, t]) => LAST.set(k, t)) } catch (e) {} }
+async function flushSeen() { if (!lastDirty) return; lastDirty = false; try { await store.kvSet('lastseen', JSON.stringify(Object.fromEntries(LAST))) } catch (e) { lastDirty = true } }
+
 /* ---------- الإشعارات والاجتماعات ---------- */
 let push = null;
 function pushNotes(list) {
@@ -374,6 +387,8 @@ function meetingTick() {
   store = await makeStore();
   await getState();
   await migrateRoles();
+  await loadSeen();
+  setInterval(flushSeen, 60000).unref();
   push = makePush(store);
   try { await push.init() } catch (e) { push = null; console.warn('push disabled:', e.message) }
   setInterval(meetingTick, Number(process.env.TICK_MS) || 60000).unref();
@@ -397,7 +412,7 @@ function meetingTick() {
   });
   // Render يرسل SIGTERM عند النوم وعند كل نشر: ننهي الطلبات الجارية (والكتابة على القاعدة) ثم نغلق
   process.on('SIGTERM', () => {
-    server.close(() => withLock(async () => { if (store.pool) await store.pool.end().catch(() => {}) }).then(() => process.exit(0)));
+    server.close(() => withLock(async () => { await flushSeen(); if (store.pool) await store.pool.end().catch(() => {}) }).then(() => process.exit(0)));
     setTimeout(() => process.exit(0), 8000).unref();
   });
 })().catch(e => { console.error('Startup failed:', e); process.exit(1) });

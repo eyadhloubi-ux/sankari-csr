@@ -1496,3 +1496,50 @@ a.file.img{flex-direction:column;align-items:flex-start;gap:4px}
 a.file.img img{max-width:220px;max-height:180px;border-radius:10px;display:block;object-fit:cover}
 a.file.img span{font-size:11px;opacity:.8}
 .stfs{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:12px;padding:6px 10px;max-height:160px;overflow:auto}
+
+/* ===== الإصدار 16 ===== */
+/* تصنيفات المشاريع والسحب */
+.pgroups{display:flex;flex-direction:column;gap:30px}
+.pg-h{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.pg-h h3{font-size:15px;font-weight:500}
+.pg-h .n{font-size:12px;color:var(--brand-ink);background:var(--brand-soft);border-radius:999px;padding:0 9px;line-height:20px}
+.pg-h small{font-size:11.5px;color:var(--muted);font-weight:300}
+.pgrp[data-cat="prep"] .pg-h .n{background:var(--amber-soft);color:var(--amber)}
+.pdrop{min-height:20px}
+.pempty{grid-column:1/-1;display:flex;align-items:center;justify-content:center;min-height:90px;border:1.5px dashed var(--line-2);border-radius:18px;color:var(--muted);font-size:12.5px;font-weight:300}
+.list.pdrop .pempty{border:0;border-radius:0}
+.pgrip{position:absolute;top:10px;inset-inline-start:10px;z-index:3;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:rgba(255,255,255,.92);color:#56617A;box-shadow:0 1px 3px rgba(0,0,0,.15);touch-action:none;cursor:grab}
+.pgrip svg{width:12px;height:12px;fill:currentColor}
+.lrow .pgrip{position:static;flex:none;box-shadow:none;background:transparent}
+@media (hover:hover) and (pointer:fine){.pgrip{opacity:0;transition:opacity .15s}[data-pid]:hover .pgrip{opacity:1}}
+.pgroups.arr [data-pid]{user-select:none;-webkit-user-select:none}
+[data-pid].pph{opacity:.35;outline:2px dashed var(--accent);outline-offset:3px}
+.pghost{position:fixed;z-index:90;pointer-events:none;opacity:.92;box-shadow:var(--sh-3);transform:rotate(-1.5deg);margin:0}
+.pghost.lrow{background:var(--surface);border-radius:14px}
+/* آخر ظهور */
+.lseen{display:inline-flex;align-items:center;gap:5px;margin-inline-start:8px;font-size:11px;color:var(--muted);font-weight:300;font-style:normal}
+.lseen.on{color:var(--ok);font-weight:400}
+.lseen.on::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
+/* أقسام ملفات المشروع */
+.lsecs{display:inline-flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:18px;flex-wrap:wrap}
+.lsecs button{position:relative;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:0;border-radius:10px;background:transparent;color:var(--ink-2);font-size:13px}
+.lsecs button svg{width:16px;height:16px}
+.lsecs button .n{font-size:11px;color:var(--muted)}
+.lsecs button.on{background:var(--brand);color:#fff}
+.lsecs button.on .n{color:rgba(255,255,255,.7)}
+.lsecs .rb{position:absolute;top:-6px;inset-inline-end:-4px;min-width:17px;height:17px;font-size:10px}
+/* الملفات المنجزة في التخطيط التشغيلي */
+.ofiles.odone{margin-top:12px}
+.odone .dh{display:none}
+.empty.sm{padding:22px}
+/* الاجتماعات حسب المشروع */
+.mfilt{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+.mfilt button{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);font-size:12.5px}
+.mfilt button .n{font-size:11px;color:var(--muted)}
+.mfilt button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.mfilt button.on .n{color:rgba(255,255,255,.7)}
+.mpj{display:flex;gap:6px;flex-wrap:wrap}
+.mpj span{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--brand-ink);background:var(--brand-soft);border-radius:8px;padding:1px 8px}
+.mpj span svg{width:12px;height:12px}
+.mpj.gen span{background:var(--surface-2);color:var(--muted)}
+.mpsel{max-height:200px}

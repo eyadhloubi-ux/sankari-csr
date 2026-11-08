@@ -1611,3 +1611,32 @@ a.file.img span{font-size:11px;opacity:.8}
 .wb-wrap.full .wb-vp{flex:1;height:auto}
 body.wb-lock{overflow:hidden}
 @media (max-width:600px){.wb-vp{height:64vh}.wb-head{padding:6px}.wtb{min-width:32px;height:32px}}
+
+/* ===== الإصدار 18 ===== */
+/* الرسوم والخطوط والأسهم فوق كل العناصر */
+.wb-svg{z-index:4}
+.wbi.wn{overflow:hidden}
+.wb-ov{position:absolute;left:0;top:0;width:1px;height:1px;z-index:6}
+.wb-end{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#fff;border:2px solid var(--accent);cursor:grab;touch-action:none;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+/* مقابض تغيير الحجم من كل الزوايا والحواف */
+.wb-h{position:absolute;width:12px;height:12px;background:#fff;border:2px solid var(--accent);border-radius:3px;display:none;z-index:5;touch-action:none}
+.wbi.sel .wb-h{display:block}
+.wbi.wn.sel{overflow:visible}
+.h-nw{left:-7px;top:-7px;cursor:nwse-resize}.h-n{left:calc(50% - 6px);top:-7px;cursor:ns-resize}.h-ne{right:-7px;top:-7px;cursor:nesw-resize}
+.h-e{right:-7px;top:calc(50% - 6px);cursor:ew-resize}.h-se{right:-7px;bottom:-7px;cursor:nwse-resize}.h-s{left:calc(50% - 6px);bottom:-7px;cursor:ns-resize}
+.h-sw{left:-7px;bottom:-7px;cursor:nesw-resize}.h-w{left:-7px;top:calc(50% - 6px);cursor:ew-resize}
+@media (pointer:coarse){.wb-h{width:18px;height:18px}.h-nw,.h-sw,.h-w{left:-10px}.h-ne,.h-e,.h-se{right:-10px}.h-nw,.h-n,.h-ne{top:-10px}.h-sw,.h-s,.h-se{bottom:-10px}.wb-end{width:20px;height:20px;margin:-10px 0 0 -10px}}
+.wcol.ink{width:18px;height:18px;border-color:rgba(255,255,255,.6)}
+.wb-vp.tool-line{cursor:crosshair}
+.wb-keys{padding:6px 12px;font-size:11px;color:#8A7D67;border-top:1px solid #E3D6BF;background:rgba(255,255,255,.4)}
+:root[data-theme="dark"] .wb-keys{border-color:#3A342B;background:transparent}
+@media (pointer:coarse){.wb-keys{display:none}}
+.wb-wrap.full .wb-keys{display:none}
+/* غير المقروء */
+.bp-un{font-size:11px;color:#fff;background:var(--accent);border-radius:999px;padding:1px 8px}
+.bn.un{background:var(--accent-soft)}
+.bn.un .bn-t b{font-weight:600}
+.ibx .bn.ib.un{background:var(--accent-soft)}
+.ib-un{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--accent-ink);font-weight:500}
+.ib-un::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.bp-h .xp{font-size:11.5px}

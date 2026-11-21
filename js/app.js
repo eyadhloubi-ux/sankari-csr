@@ -494,7 +494,7 @@ function renderTop(){
   $('#meetBtn').classList.toggle('on',ui.view==='meet'||ui.view==='meetOne');const pi=myPendInv().length;$('#meetN').hidden=!pi;$('#meetN').textContent=pi;
   const nu=nUnread();$('#bellw').innerHTML='<button class="tb bell'+(ui.bell?' on':'')+'" type="button" data-a="bell" aria-label="الإشعارات" aria-expanded="'+!!ui.bell+'"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 004 0"/></svg>'+(nu?'<span class="rb">'+(nu>99?'99+':nu)+'</span>':'')+'</button>'+(ui.bell?bellHtml():'');
   let h='<button type="button" data-a="menu" aria-expanded="'+ui.menu+'"><span class="nm">'+esc(u.name)+'</span>'+av(u.id)+'</button>';
-  if(ui.menu)h+='<div class="menu"><div class="mg">'+(u.admin?'مسؤول النظام · ':'')+(RL[u.role]||'')+'</div><button type="button" data-a="myPw">'+ic('edit')+'تغيير كلمة المرور</button>'+(u.admin||u.role==='member'?'<button type="button" data-a="backup">'+ic('down')+'نسخة احتياطية</button>':'')+(u.admin?'<button type="button" data-a="restore">'+ic('up')+'استيراد نسخة احتياطية</button>'+(SRV.on?'':'<button type="button" data-a="reset">'+ic('reset')+'استعادة البيانات الأولية</button>'):'')+'<hr>'+(isStandalone()?'':'<button type="button" data-a="install">'+ic('down')+'تنزيل التطبيق</button>')+(pushState()==='on'?'':pushState()==='no'?'':'<button type="button" data-a="pushOn">'+ic('alert')+'تفعيل إشعارات الجهاز</button>')+'<hr><button type="button" data-a="logout">'+ic('back')+'تسجيل الخروج</button><div class="note">'+(SRV.on?'البيانات محفوظة على الخادم ومشتركة بين الجميع':'نسخة محلية · البيانات في هذا المتصفح فقط')+'<br>الإصدار 22</div></div>';
+  if(ui.menu)h+='<div class="menu"><div class="mg">'+(u.admin?'مسؤول النظام · ':'')+(RL[u.role]||'')+'</div><button type="button" data-a="myPw">'+ic('edit')+'تغيير كلمة المرور</button>'+(u.admin||u.role==='member'?'<button type="button" data-a="backup">'+ic('down')+'نسخة احتياطية</button>':'')+(u.admin?'<button type="button" data-a="restore">'+ic('up')+'استيراد نسخة احتياطية</button>'+(SRV.on?'':'<button type="button" data-a="reset">'+ic('reset')+'استعادة البيانات الأولية</button>'):'')+'<hr>'+(isStandalone()?'':'<button type="button" data-a="install">'+ic('down')+'تنزيل التطبيق</button>')+(pushState()==='on'?'':pushState()==='no'?'':'<button type="button" data-a="pushOn">'+ic('alert')+'تفعيل إشعارات الجهاز</button>')+'<hr><button type="button" data-a="logout">'+ic('back')+'تسجيل الخروج</button><div class="note">'+(SRV.on?'البيانات محفوظة على الخادم ومشتركة بين الجميع':'نسخة محلية · البيانات في هذا المتصفح فقط')+'<br>الإصدار 23</div></div>';
   $('#uchip').innerHTML=h}
 
 /* auth */
@@ -1881,9 +1881,9 @@ const archN=()=>data.projects.filter(p=>pCat(p)==='arch').length;
 
 /* ---------- بطاقة المشروع ---------- */
 const CSUB=[['goals','الأهداف والمؤشرات'],['hr','الموارد البشرية'],['bud','الميزانية']];
-const canGoals=()=>isCom(cur())||me().role==='me';
-const canHR=()=>isCom(cur())||me().role==='hr';
-const canBud=()=>isCom(cur())||me().role==='fin';
+const canGoals=()=>isCom(cur())||me().role==='me'||cardX();
+const canHR=()=>isCom(cur())||me().role==='hr'||cardX();
+const canBud=()=>isCom(cur())||me().role==='fin'||cardX();
 function planTab(p){const r=me().role,s=CSUB.some(x=>x[0]===ui.csub)?ui.csub:(r==='hr'?'hr':r==='fin'?'bud':'goals');
   const mine={goals:'me',hr:'hr',bud:'fin'};
   const sw='<div class="subtabs" role="tablist">'+CSUB.map(x=>'<button type="button" role="tab" class="'+(s===x[0]?'on':'')+'" aria-selected="'+(s===x[0])+'" data-a="csub" data-v="'+x[0]+'">'+x[1]+(r===mine[x[0]]?' <i class="mydot" title="قسمك"></i>':'')+'</button>').join('')+'</div>';
@@ -2082,7 +2082,7 @@ function inboxHtml(){const xs=inboxList().slice(0,60);
 TABS.splice(TABS.findIndex(t=>t[0]==='chat'),1);
 PCATS.splice(PCATS.findIndex(c=>c[0]==='study'),1);
 /* الرواتب: للجنة والمالية والموارد البشرية ومدير المشروع (إذا أُعطي البطاقة) فقط */
-const canSal=p=>!!cur()&&(isCom(cur())||['hr','fin'].includes(me().role)||(!!p&&p.managerId===me().id));
+const canSal=p=>!!cur()&&(isCom(cur())||['hr','fin'].includes(me().role)||(!!p&&(p.managerId===me().id||cardX(p))));
 Object.assign(A,{
   pchatOpen:()=>{const p=proj(ui.pid);if(p&&canTab(p,'chat'))openR(chatReq(p).id)},
   ibOpen:d=>{ui.ibx=false;const p=proj(d.p);if(!p)return;go('project',p.id);setTimeout(()=>openR(chatReq(p).id),0)}
@@ -2255,6 +2255,9 @@ RO_OK.push('wnCopy');
 /* ===================== الإصدار 22: الميزانية قيد التطوير · الردود كفقاعات (اللجنة يميناً والإدارة التنفيذية يساراً) ===================== */
 function updPair(i,cls){const xs=[wnLast(i,'c'),wnLast(i,'x')].filter(Boolean).sort((a,b)=>(a.at||0)-(b.at||0));return xs.length?'<div class="'+cls+'s">'+xs.map(u=>updBox(u,updSide(u),cls)).join('')+'</div>':''}
 function budView(p){return '<div class="empty soon"><span class="e">'+ic('table')+'</span><b>الميزانية قيد التطوير</b><span>نعمل على هذا القسم، وسيعود قريباً. أي أرقام أُدخلت سابقاً محفوظة ولن تضيع.</span></div>'}
+
+/* ===================== الإصدار 23: المدير التنفيذي والأعضاء التنفيذيون الذين أُعطوا بطاقة المشروع يعدّلونها ===================== */
+function cardX(p){p=p||proj(ui.pid);const u=cur();return !!(p&&u&&['manager','staff'].includes(u.role)&&!isRO()&&permOf(u,p).plan&&(p.managerId===u.id||(p.staffIds||[]).includes(u.id)))}
 
 boot();
 })();

@@ -494,7 +494,7 @@ function renderTop(){
   $('#meetBtn').classList.toggle('on',ui.view==='meet'||ui.view==='meetOne');const pi=myPendInv().length;$('#meetN').hidden=!pi;$('#meetN').textContent=pi;
   const nu=nUnread();$('#bellw').innerHTML='<button class="tb bell'+(ui.bell?' on':'')+'" type="button" data-a="bell" aria-label="الإشعارات" aria-expanded="'+!!ui.bell+'"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 004 0"/></svg>'+(nu?'<span class="rb">'+(nu>99?'99+':nu)+'</span>':'')+'</button>'+(ui.bell?bellHtml():'');
   let h='<button type="button" data-a="menu" aria-expanded="'+ui.menu+'"><span class="nm">'+esc(u.name)+'</span>'+av(u.id)+'</button>';
-  if(ui.menu)h+='<div class="menu"><div class="mg">'+(u.admin?'مسؤول النظام · ':'')+(RL[u.role]||'')+'</div><button type="button" data-a="myPw">'+ic('edit')+'تغيير كلمة المرور</button>'+(u.admin||u.role==='member'?'<button type="button" data-a="backup">'+ic('down')+'نسخة احتياطية</button>':'')+(u.admin?'<button type="button" data-a="restore">'+ic('up')+'استيراد نسخة احتياطية</button>'+(SRV.on?'':'<button type="button" data-a="reset">'+ic('reset')+'استعادة البيانات الأولية</button>'):'')+'<hr>'+(isStandalone()?'':'<button type="button" data-a="install">'+ic('down')+'تنزيل التطبيق</button>')+(pushState()==='on'?'':pushState()==='no'?'':'<button type="button" data-a="pushOn">'+ic('alert')+'تفعيل إشعارات الجهاز</button>')+'<hr><button type="button" data-a="logout">'+ic('back')+'تسجيل الخروج</button><div class="note">'+(SRV.on?'البيانات محفوظة على الخادم ومشتركة بين الجميع':'نسخة محلية · البيانات في هذا المتصفح فقط')+'<br>الإصدار 21</div></div>';
+  if(ui.menu)h+='<div class="menu"><div class="mg">'+(u.admin?'مسؤول النظام · ':'')+(RL[u.role]||'')+'</div><button type="button" data-a="myPw">'+ic('edit')+'تغيير كلمة المرور</button>'+(u.admin||u.role==='member'?'<button type="button" data-a="backup">'+ic('down')+'نسخة احتياطية</button>':'')+(u.admin?'<button type="button" data-a="restore">'+ic('up')+'استيراد نسخة احتياطية</button>'+(SRV.on?'':'<button type="button" data-a="reset">'+ic('reset')+'استعادة البيانات الأولية</button>'):'')+'<hr>'+(isStandalone()?'':'<button type="button" data-a="install">'+ic('down')+'تنزيل التطبيق</button>')+(pushState()==='on'?'':pushState()==='no'?'':'<button type="button" data-a="pushOn">'+ic('alert')+'تفعيل إشعارات الجهاز</button>')+'<hr><button type="button" data-a="logout">'+ic('back')+'تسجيل الخروج</button><div class="note">'+(SRV.on?'البيانات محفوظة على الخادم ومشتركة بين الجميع':'نسخة محلية · البيانات في هذا المتصفح فقط')+'<br>الإصدار 22</div></div>';
   $('#uchip').innerHTML=h}
 
 /* auth */
@@ -2124,7 +2124,7 @@ const SIDE={c:'اللجنة',x:'الإدارة التنفيذية'};
 function updBox(u,s,cls){return u?'<div class="'+cls+' s-'+s+'"><b>'+SIDE[s]+'</b><span>'+esc(u.t)+'</span><small>'+esc(shortName(u.u))+' · '+when(u.at)+'</small></div>':''}
 function wnFoot(p,i){const x=isX(p),c=wbEd(),uc=wnLast(i,'c'),ux=wnLast(i,'x'),n=(i.upds||[]).length;
   const by=i.u&&user(i.u)?'<span class="wb-by" title="'+esc(uname(i.u))+'">'+esc(shortName(i.u))+'</span>':'';
-  return '<div class="wn-f">'+updBox(uc,'c','wn-up')+updBox(ux,'x','wn-up')+
+  return '<div class="wn-f">'+updPair(i,'wn-up')+
     '<div class="wn-a">'+(x||c?'<button type="button" class="wn-b" data-a="wnUpd" data-id="'+i.id+'" data-side="'+(c?'c':'x')+'">'+ic('edit')+(c?'ردّ اللجنة':'المستجدات')+'</button>':'')+(n>2||(n>1&&(!uc||!ux))?'<button type="button" class="wn-b" data-a="wnHist" data-id="'+i.id+'" title="كل المستجدات">'+n+'</button>':'')+'<span class="sp"></span>'+by+
     (x||c?'<button type="button" class="wn-c'+(i.xck?' on':'')+(c?' com':'')+'" data-a="wnChk" data-id="'+i.id+'" title="'+(c?(i.xck?'أنجزتها الإدارة التنفيذية · اضغط لإنهائها ونقلها إلى المنتهية':'إنهاء الملاحظة ونقلها إلى المنتهية'):(i.xck?'إلغاء علامة الإنجاز':'تم: تظهر مشطوبة للجنة'))+'" aria-label="إنجاز">'+ic('check')+'</button>':(i.xck?'<span class="wn-c on" title="أنجزتها الإدارة التنفيذية">'+ic('check')+'</span>':''))+'</div></div>'}
 function wsideHtml(p){const ns=wbItems(p).filter(i=>i.t==='note'),act=ns.filter(i=>!i.fin),fin=ns.filter(i=>i.fin).sort((a,b)=>(b.fin.at||0)-(a.fin.at||0)),tab=ui.wsTab==='fin'?'fin':'act',x=isX(p),c=wbEd();
@@ -2132,7 +2132,7 @@ function wsideHtml(p){const ns=wbItems(p).filter(i=>i.t==='note'),act=ns.filter(
   const xs=tab==='act'?act.slice().sort((a,b)=>(!!a.xck-!!b.xck)||((b.at||0)-(a.at||0))):fin;
   if(!xs.length)return h+'<div class="ws-empty">'+(tab==='act'?(c?'ارسم ستيكي نوت على اللوحة، وستظهر هنا كقائمة لا تضيع منها ملاحظة.':'لا ملاحظات من اللجنة بعد.'):'تظهر هنا الملاحظات التي أنهتها اللجنة، محفوظة مع مستجداتها.')+'</div>';
   return h+'<div class="ws-list">'+xs.map(i=>'<div class="ws-i'+(i.xck&&!i.fin?' xck':'')+(i.fin?' fin':'')+'" style="--nc:'+(WBC[i.c]||WBC.y)+'"><button type="button" class="ws-t'+((i.txt||'').trim()?'':' emp')+'" data-a="'+(i.fin?'wnHist':'wnLoc')+'" data-id="'+i.id+'" title="'+(i.fin?'عرض المستجدات':'إظهارها على اللوحة')+'">'+esc((i.txt||'').trim()||'نوت بلا نص')+'</button>'+
-      updBox(wnLast(i,'c'),'c','ws-up')+updBox(wnLast(i,'x'),'x','ws-up')+
+      updPair(i,'ws-up')+
       '<div class="ws-a">'+(i.fin?'<small>أُنهيت · '+esc(shortName(i.fin.u))+' · '+when(i.fin.at)+'</small><span class="sp"></span>'+(c?'<button type="button" class="btn sm ghost" data-a="wnBack" data-id="'+i.id+'">'+ic('reset')+'إعادة إلى اللوحة</button>':''):
         (i.xck?'<small class="ok">'+ic('check')+'أنجزتها الإدارة التنفيذية</small>':'<small>'+(i.at?when(i.at):'')+'</small>')+'<span class="sp"></span>'+((x||c)?'<button type="button" class="btn sm ghost" data-a="wnUpd" data-id="'+i.id+'" data-side="'+(c?'c':'x')+'">'+ic('edit')+(c?'ردّ اللجنة':'المستجدات')+'</button><button type="button" class="wn-c'+(i.xck?' on':'')+(c?' com':'')+'" data-a="wnChk" data-id="'+i.id+'" aria-label="إنجاز">'+ic('check')+'</button>':''))+'</div></div>').join('')+'</div>'}
 const updList=us=>us.length?'<div class="uph">'+us.map(u=>'<div class="uph-i s-'+updSide(u)+'"><em>'+SIDE[updSide(u)]+'</em><p>'+esc(u.t)+'</p><small>'+esc(uname(u.u))+' · '+when(u.at)+'</small></div>').join('')+'</div>':'<p class="note-s">لا مستجدات بعد.</p>';
@@ -2238,7 +2238,7 @@ Object.assign(A,{
 function wnFoot(p,i){const x=isX(p),c=wbEd(),uc=wnLast(i,'c'),ux=wnLast(i,'x'),n=(i.upds||[]).length;
   const by=i.u&&user(i.u)?'<span class="wb-by" title="'+esc(uname(i.u))+'">'+esc(shortName(i.u))+'</span>':'';
   const tt=c?(i.xck?'مشطوبة · اضغط لنقلها إلى المنتهية':'شطب الملاحظة'):(i.xck?'إلغاء الشطب':'تم: تظهر مشطوبة للجنة');
-  return '<div class="wn-f">'+updBox(uc,'c','wn-up')+updBox(ux,'x','wn-up')+
+  return '<div class="wn-f">'+updPair(i,'wn-up')+
     '<div class="wn-a">'+(x||c?'<button type="button" class="wn-b" data-a="wnUpd" data-id="'+i.id+'">'+ic('edit')+(c?'ردّ اللجنة':'المستجدات')+'</button>':'')+(n>2||(n>1&&(!uc||!ux))?'<button type="button" class="wn-b" data-a="wnHist" data-id="'+i.id+'" title="كل المستجدات">'+n+'</button>':'')+'<span class="sp"></span>'+by+
     (x||c?'<button type="button" class="wn-c'+(i.xck?' on':'')+(c&&i.xck?' com fin2':'')+'" data-a="wnChk" data-id="'+i.id+'" title="'+tt+'" aria-label="'+tt+'">'+(c&&i.xck?ic('fwd'):ic('check'))+'</button>':(i.xck?'<span class="wn-c on" title="مشطوبة">'+ic('check')+'</span>':''))+'</div></div>'}
 function wsideHtml(p){const ns=wbItems(p).filter(i=>i.t==='note'),act=ns.filter(i=>!i.fin),fin=ns.filter(i=>i.fin).sort((a,b)=>(b.fin.at||0)-(a.fin.at||0)),tab=ui.wsTab==='fin'?'fin':'act',x=isX(p),c=wbEd();
@@ -2247,10 +2247,14 @@ function wsideHtml(p){const ns=wbItems(p).filter(i=>i.t==='note'),act=ns.filter(
   if(!xs.length)return h+'<div class="ws-empty">'+(tab==='act'?(c?'ارسم ستيكي نوت على اللوحة، وستظهر هنا كقائمة لا تضيع منها ملاحظة.':'لا ملاحظات من اللجنة بعد.'):'تظهر هنا الملاحظات التي أنهتها اللجنة، محفوظة مع مستجداتها.')+'</div>';
   const bt=(a,id,icn,t,cls)=>'<button type="button" class="ws-btn'+(cls?' '+cls:'')+'" data-a="'+a+'" data-id="'+id+'" title="'+t+'" aria-label="'+t+'">'+ic(icn)+'<span>'+t+'</span></button>';
   return h+'<div class="ws-list">'+xs.map(i=>'<div class="ws-i'+(i.xck&&!i.fin?' xck':'')+(i.fin?' fin':'')+'" style="--nc:'+(WBC[i.c]||WBC.y)+'"><button type="button" class="ws-t'+((i.txt||'').trim()?'':' emp')+'" data-a="'+(i.fin?'wnHist':'wnLoc')+'" data-id="'+i.id+'" title="'+(i.fin?'عرض المستجدات':'إظهارها على اللوحة')+'">'+esc((i.txt||'').trim()||'نوت بلا نص')+'</button>'+
-      updBox(wnLast(i,'c'),'c','ws-up')+updBox(wnLast(i,'x'),'x','ws-up')+
+      updPair(i,'ws-up')+
       (i.fin?'<small class="ws-m">أُنهيت · '+esc(shortName(i.fin.u))+' · '+when(i.fin.at)+'</small><div class="ws-a ws-opts">'+bt('wnHist',i.id,'list','المستجدات')+bt('wnCopy',i.id,'f_p','نسخ النص')+(c?bt('wnBack',i.id,'reset','إعادة إلى اللوحة')+bt('wnDel',i.id,'trash','حذف نهائي','del'):'')+'</div>':
         '<div class="ws-a">'+(i.xck?'<small class="ok">'+ic('check')+'مشطوبة · '+esc(shortName(i.xck.u))+'</small>':'<small>'+(i.at?when(i.at):'')+'</small>')+'<span class="sp"></span>'+((x||c)?'<button type="button" class="btn sm ghost" data-a="wnUpd" data-id="'+i.id+'">'+ic('edit')+(c?'ردّ اللجنة':'المستجدات')+'</button>'+(i.xck?'<button type="button" class="btn sm ghost" data-a="wnUnx" data-id="'+i.id+'" title="إلغاء الشطب">'+ic('reset')+'</button>':'')+'<button type="button" class="wn-c'+(i.xck?' on':'')+(c&&i.xck?' com fin2':'')+'" data-a="wnChk" data-id="'+i.id+'" aria-label="'+(c&&i.xck?'نقل إلى المنتهية':'شطب')+'" title="'+(c&&i.xck?'نقل إلى المنتهية':'شطب')+'">'+(c&&i.xck?ic('fwd'):ic('check'))+'</button>':'')+'</div>')+'</div>').join('')+'</div>'}
 RO_OK.push('wnCopy');
+
+/* ===================== الإصدار 22: الميزانية قيد التطوير · الردود كفقاعات (اللجنة يميناً والإدارة التنفيذية يساراً) ===================== */
+function updPair(i,cls){const xs=[wnLast(i,'c'),wnLast(i,'x')].filter(Boolean).sort((a,b)=>(a.at||0)-(b.at||0));return xs.length?'<div class="'+cls+'s">'+xs.map(u=>updBox(u,updSide(u),cls)).join('')+'</div>':''}
+function budView(p){return '<div class="empty soon"><span class="e">'+ic('table')+'</span><b>الميزانية قيد التطوير</b><span>نعمل على هذا القسم، وسيعود قريباً. أي أرقام أُدخلت سابقاً محفوظة ولن تضيع.</span></div>'}
 
 boot();
 })();

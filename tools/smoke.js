@@ -66,7 +66,7 @@ async function apiSuite(env, kind, tag) {
       ok(/<html/.test(zlib.gunzipSync(raw.b).toString()), 'index gunzip content');
       ok(raw.r.headers['cache-control'] === 'no-cache' && !!raw.r.headers.etag, 'index no-cache + etag');
       ok((await fetch(S.base + '/', { headers: { 'If-None-Match': raw.r.headers.etag } })).status === 304, 'index 304');
-      const js = await fetch(S.base + '/js/app.js?v=20');
+      const js = await fetch(S.base + '/js/app.js?v=21');
       ok(js.status === 200 && /immutable/.test(js.headers.get('cache-control')), 'versioned js immutable');
       ok((await fetch(S.base + '/assets/logo-mark.png')).headers.get('content-type') === 'image/png', 'png');
       ok((await fetch(S.base + '/css/nope.css')).status === 404, 'missing asset 404');

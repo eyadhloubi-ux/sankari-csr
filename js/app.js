@@ -494,7 +494,7 @@ function renderTop(){
   $('#meetBtn').classList.toggle('on',ui.view==='meet'||ui.view==='meetOne');const pi=myPendInv().length;$('#meetN').hidden=!pi;$('#meetN').textContent=pi;
   const nu=nUnread();$('#bellw').innerHTML='<button class="tb bell'+(ui.bell?' on':'')+'" type="button" data-a="bell" aria-label="الإشعارات" aria-expanded="'+!!ui.bell+'"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 004 0"/></svg>'+(nu?'<span class="rb">'+(nu>99?'99+':nu)+'</span>':'')+'</button>'+(ui.bell?bellHtml():'');
   let h='<button type="button" data-a="menu" aria-expanded="'+ui.menu+'"><span class="nm">'+esc(u.name)+'</span>'+av(u.id)+'</button>';
-  if(ui.menu)h+='<div class="menu"><div class="mg">'+(u.admin?'مسؤول النظام · ':'')+(RL[u.role]||'')+'</div><button type="button" data-a="myPw">'+ic('edit')+'تغيير كلمة المرور</button>'+(u.admin||u.role==='member'?'<button type="button" data-a="backup">'+ic('down')+'نسخة احتياطية</button>':'')+(u.admin?'<button type="button" data-a="restore">'+ic('up')+'استيراد نسخة احتياطية</button>'+(SRV.on?'':'<button type="button" data-a="reset">'+ic('reset')+'استعادة البيانات الأولية</button>'):'')+'<hr>'+(isStandalone()?'':'<button type="button" data-a="install">'+ic('down')+'تنزيل التطبيق</button>')+(pushState()==='on'?'':pushState()==='no'?'':'<button type="button" data-a="pushOn">'+ic('alert')+'تفعيل إشعارات الجهاز</button>')+'<hr><button type="button" data-a="logout">'+ic('back')+'تسجيل الخروج</button><div class="note">'+(SRV.on?'البيانات محفوظة على الخادم ومشتركة بين الجميع':'نسخة محلية · البيانات في هذا المتصفح فقط')+'<br>الإصدار 20</div></div>';
+  if(ui.menu)h+='<div class="menu"><div class="mg">'+(u.admin?'مسؤول النظام · ':'')+(RL[u.role]||'')+'</div><button type="button" data-a="myPw">'+ic('edit')+'تغيير كلمة المرور</button>'+(u.admin||u.role==='member'?'<button type="button" data-a="backup">'+ic('down')+'نسخة احتياطية</button>':'')+(u.admin?'<button type="button" data-a="restore">'+ic('up')+'استيراد نسخة احتياطية</button>'+(SRV.on?'':'<button type="button" data-a="reset">'+ic('reset')+'استعادة البيانات الأولية</button>'):'')+'<hr>'+(isStandalone()?'':'<button type="button" data-a="install">'+ic('down')+'تنزيل التطبيق</button>')+(pushState()==='on'?'':pushState()==='no'?'':'<button type="button" data-a="pushOn">'+ic('alert')+'تفعيل إشعارات الجهاز</button>')+'<hr><button type="button" data-a="logout">'+ic('back')+'تسجيل الخروج</button><div class="note">'+(SRV.on?'البيانات محفوظة على الخادم ومشتركة بين الجميع':'نسخة محلية · البيانات في هذا المتصفح فقط')+'<br>الإصدار 21</div></div>';
   $('#uchip').innerHTML=h}
 
 /* auth */
@@ -1685,13 +1685,13 @@ function wbDraw(){const p=proj(ui.pid),w=$('#wbw');if(!p||!w)return;const its=wb
   const hs=t=>ed?(t==='text'?['e','w']:HND).map(h=>'<span class="wb-h h-'+h+'" data-h="'+h+'"></span>').join(''):'';
   const fr=its.filter(i=>i.t==='frame'),nt=its.filter(i=>(i.t==='note'||i.t==='text')&&!i.fin);
   w.innerHTML=fr.map(i=>'<div class="wbi wf'+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+i.w+'px;height:'+i.h+'px"><div class="wb-t wf-t" dir="auto">'+esc(i.txt||'')+'</div>'+hs('frame')+'</div>').join('')+
-    nt.map(i=>'<div class="wbi '+(i.t==='note'?'wn'+(i.xck?' xck':''):'wt')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||(i.t==='note'?200:260))+'px;'+(i.t==='note'?'min-height:'+(i.h||130)+'px;background:'+(WBC[i.c]||WBC.y):'font-size:'+(i.fs||22)+'px;color:'+(i.ink||''))+'"><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+(i.t==='note'?wnFoot(p,i):'')+hs(i.t)+'</div>').join('')+
+    nt.map(i=>'<div class="wbi '+(i.t==='note'?'wn'+(i.xck?' xck':''):'wt')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||(i.t==='note'?200:260))+'px;'+(i.t==='note'?'min-height:'+(i.h||130)+'px;background:'+(WBC[i.c]||WBC.y)+(i.fs?';font-size:'+i.fs+'px':''):'font-size:'+(i.fs||22)+'px;color:'+(i.ink||''))+'"><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+(i.t==='note'?wnFoot(p,i):'')+hs(i.t)+'</div>').join('')+
     '<svg class="wb-svg" id="wbsvg"><defs>'+WINK.concat(['#4B8BF5']).map((c,k)=>'<marker id="wah'+k+'" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="'+c+'"/></marker>').join('')+'</defs></svg><div class="wb-ov" id="wbov"></div>';
   wbLines();wbApply();wbSelBar();wsideDraw()}
 const inkIx=c=>Math.max(0,WINK.indexOf(c||WINK[0]));
 function wbLines(){const p=proj(ui.pid),svg=$('#wbsvg'),ov=$('#wbov');if(!p||!svg)return;const its=wbItems(p),sel=ui.wbSel,ed=wbEd();let g='',o='';
   its.forEach(i=>{if(i.t==='pen'){const d=penD(i.pts||[]);g+='<path class="wpen'+(sel===i.id?' sel':'')+'" d="'+d+'" stroke="'+(i.c||WINK[0])+'"/>'+(ed?'<path class="whit" data-wid="'+i.id+'" d="'+d+'"/>':'')}
-    else if(isLineW(i)){const e=wbEnds(p,i);if(!e)return;const d='M'+e.a.x+' '+e.a.y+' L'+e.b.x+' '+e.b.y,c=i.c||(i.t==='arrow'?'#5B5346':WINK[0]);
+    else if(isLineW(i)){const e=wbEnds(p,i);if(!e)return;const d=ptsD(e.pts),c=i.c||(i.t==='arrow'?'#5B5346':WINK[0]);
       g+='<path class="warr'+(sel===i.id?' sel':'')+'" d="'+d+'" stroke="'+c+'"'+(i.t==='arrow'?' marker-end="url(#wah'+(sel===i.id?WINK.length:inkIx(i.c))+')"':'')+'/>'+(ed?'<path class="whit" data-wid="'+i.id+'" d="'+d+'"/>':'');
       if(ed&&sel===i.id)o+='<span class="wb-end" data-end="1" data-wid="'+i.id+'" style="left:'+e.a.x+'px;top:'+e.a.y+'px"></span><span class="wb-end" data-end="2" data-wid="'+i.id+'" style="left:'+e.b.x+'px;top:'+e.b.y+'px"></span>'}});
   const keep=svg.querySelector('defs').outerHTML;svg.innerHTML=keep+g+'<path class="wtmp" id="wbtmp" d=""/>';if(ov)ov.innerHTML=o}
@@ -1717,7 +1717,7 @@ function wbCenter(p){const vp=$('#wbvp'),v=wbV(p);return {x:(vp.clientWidth/2-v.
 function wbAdd(p,t,at){const c=at||wbCenter(p),its=wbItems(p),n=its.filter(i=>i.t===t).length%6,o=at?0:n*18,id=uid('w');wbSnap(p);
   const it=t==='note'?{id,t,x:Math.round(c.x-100+o),y:Math.round(c.y-65+o),w:200,h:130,c:ui.wbLastC||'y',txt:''}:t==='text'?{id,t,x:Math.round(c.x-130+o),y:Math.round(c.y-20+o),w:260,fs:24,txt:''}:{id,t,x:Math.round(c.x-220),y:Math.round(c.y-150),w:440,h:300,txt:'إطار'};
   if(t==='frame')its.unshift(it);else its.push(it);ui.wbt='sel';wbSave(p,it);wbDraw();wbSelect(id);const e=$('.wb-empty');if(e)e.remove();if(t!=='frame')wbEditText(p,id);return it}
-function wbEditText(p,id){const el=$('#wbw [data-wid="'+id+'"] .wb-t'),it=wbFind(p,id);if(!el||!it||!isBoxW(it))return;ui.wbBusy=true;const before=JSON.stringify(wbItems(p));el.contentEditable='true';el.classList.add('editing');el.focus();
+function wbEditText(p,id){const el=$('#wbw [data-wid="'+id+'"] .wb-t'),it=wbFind(p,id);if(!el||!it||!isBoxW(it)||el.isContentEditable)return;ui.wbBusy=true;const before=JSON.stringify(wbItems(p));el.contentEditable='true';el.classList.add('editing');el.focus({preventScroll:true});
   const r=document.createRange();r.selectNodeContents(el);r.collapse(false);const s=getSelection();s.removeAllRanges();s.addRange(r);
   const fin=()=>{el.removeEventListener('blur',fin);el.contentEditable='false';el.classList.remove('editing');ui.wbBusy=false;const tx=el.innerText.replace(/\n{3,}/g,'\n\n').trim();
     if(!tx&&it.t==='text'){p.wb=wbItems(p).filter(x=>x!==it&&!(isLineW(x)&&(x.a===id||x.b===id)));ui.wbSel=null;wbSave(p);wbDraw();return}
@@ -1751,11 +1751,11 @@ function wbInit(){const vp=$('#wbvp'),p=proj(ui.pid);if(!vp||!p||vp._init)return
     const ed=wbEd(),t=ui.wbt||'sel',el=e.target.closest('[data-wid]'),q0=W(e),x0=e.clientX,y0=e.clientY,v=wbV(p);let moved=false,act=null;
     const box=el&&el.classList.contains('wbi')?el:null;
     if(ed&&MKT.includes(t))act={k:'mk',kind:t};else if(ed&&t==='pen')act={k:'pen',s:{id:uid('w'),t:'pen',pts:[[Math.round(q0.x),Math.round(q0.y)]],c:ui.wbInk||WINK[0]}};
-    else if(ed&&(t==='arrow'||t==='line')){const pend=ui.wbPend;act={k:'line',kind:t,a:box&&!box.classList.contains('wf')?box.dataset.wid:null,p:{x:Math.round(q0.x),y:Math.round(q0.y)},pend}}
+    else if(ed&&(t==='arrow'||t==='line'||e.target.closest('[data-port]'))){const pend=e.target.closest('[data-port]')?null:ui.wbPend;act={k:'line',kind:t==='line'?'line':'arrow',a:box&&!box.classList.contains('wf')?box.dataset.wid:null,p:{x:Math.round(q0.x),y:Math.round(q0.y)},pend}}
     else if(ed&&e.target.closest('[data-end]')){const it=wbFind(p,el.dataset.wid);act={k:'end',it,end:e.target.closest('[data-end]').dataset.end,before:JSON.stringify(wbItems(p))}}
     else if(ed&&box&&e.target.closest('[data-h]')){const it=wbFind(p,box.dataset.wid);act={k:'rs',it,h:e.target.closest('[data-h]').dataset.h,o:{x:it.x,y:it.y,w:box.offsetWidth,h:box.offsetHeight},before:JSON.stringify(wbItems(p))}}
-    else if(ed&&el){const it=wbFind(p,el.dataset.wid);if(!it)return;if(ui.wbSel!==it.id)wbSelect(it.id);
-      const grp=it.t==='frame'?wbFrameGroup(p,it):[];act={k:'move',it,grp:[it].concat(grp).map(x=>({x,o:wbOrig(x)})),before:JSON.stringify(wbItems(p))}}
+    else if(ed&&el){const it=wbFind(p,el.dataset.wid);if(!it)return;const wasSel=ui.wbSel===it.id;if(!wasSel)wbSelect(it.id);
+      const grp=it.t==='frame'?wbFrameGroup(p,it):[];act={k:'move',it,wasSel,grp:[it].concat(grp).map(x=>({x,o:wbOrig(x)})),before:JSON.stringify(wbItems(p))}}
     else{if(ui.wbSel)wbSelect(null);act={k:'pan',vx:v.x,vy:v.y}}
     e.preventDefault();try{vp.setPointerCapture(e.pointerId)}catch(_){}ui.dragging=true;
     const mv=ev=>{if(!pts.has(ev.pointerId))return;pts.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
@@ -1775,11 +1775,12 @@ function wbInit(){const vp=$('#wbvp'),p=proj(ui.pid);if(!vp||!p||vp._init)return
       const pushU=b=>{ui.wbU=ui.wbU||{};(ui.wbU[p.id]=ui.wbU[p.id]||[]).push(b);ui.wbR=ui.wbR||{};ui.wbR[p.id]=[]};
       $('#wbw').querySelectorAll('.tgt').forEach(n=>n.classList.remove('tgt'));const tp=$('#wbtmp');if(tp)tp.setAttribute('d','');
       if(act.k==='mk'){wbGhost(null);wbMake(p,act.kind,q0,W(ev),moved)}else if((act.k==='move'||act.k==='rs')&&moved){pushU(act.before);wbSave(p,act.it)}
+      else if(act.k==='move'&&!moved&&act.wasSel&&isBoxW(act.it)&&act.it.t!=='frame'&&!ev.target.closest('[data-a]'))wbEditText(p,act.it.id)
       else if(act.k==='pen'){if(act.s.pts.length>1){wbSnap(p);wbItems(p).push(act.s);wbSave(p,act.s)}wbLines()}
       else if(act.k==='end'&&moved){const q=W(ev),tn=wbHit(ev),it=act.it,k=act.end==='1'?'a':'b',other=act.end==='1'?it.b:it.a;
-        if(tn&&!tn.classList.contains('wf')&&tn.dataset.wid!==other){it[k]=tn.dataset.wid}else{it[k]=null;it[act.end==='1'?'x1':'x2']=Math.round(q.x);it[act.end==='1'?'y1':'y2']=Math.round(q.y)}pushU(act.before);wbSave(p,it);wbLines()}
+        if(tn&&!tn.classList.contains('wf')&&tn.dataset.wid!==other){it[k]=tn.dataset.wid;const sd=wbSideAt(tn.dataset.wid,q);if(sd)it['s'+k]=sd;else delete it['s'+k]}else{it[k]=null;delete it['s'+k];it[act.end==='1'?'x1':'x2']=Math.round(q.x);it[act.end==='1'?'y1':'y2']=Math.round(q.y)}pushU(act.before);wbSave(p,it);wbLines()}
       else if(act.k==='line'){const q=W(ev),tn=wbHit(ev,act.a),bId=tn&&!tn.classList.contains('wf')?tn.dataset.wid:null;
-        const mk=(a,pa,b,pb)=>{const it={id:uid('w'),t:act.kind,a:a||null,b:b||null};if(!a){it.x1=pa.x;it.y1=pa.y}if(!b){it.x2=pb.x;it.y2=pb.y}if(ui.wbInk&&ui.wbInk!==WINK[0])it.c=ui.wbInk;wbSnap(p);wbItems(p).push(it);ui.wbPend=null;wbSave(p,it);wbLines();wbSelect(it.id);toast(act.kind==='arrow'?'أُضيف السهم':'أُضيف الخط')};
+        const mk=(a,pa,b,pb)=>{const it={id:uid('w'),t:act.kind,a:a||null,b:b||null};{const s1=a&&wbSideAt(a,pa),s2=b&&wbSideAt(b,pb);if(s1)it.sa=s1;if(s2)it.sb=s2}if(!a){it.x1=pa.x;it.y1=pa.y}if(!b){it.x2=pb.x;it.y2=pb.y}if(ui.wbInk&&ui.wbInk!==WINK[0])it.c=ui.wbInk;wbSnap(p);wbItems(p).push(it);ui.wbPend=null;wbSave(p,it);wbLines();wbSelect(it.id);toast(act.kind==='arrow'?'أُضيف السهم':'أُضيف الخط')};
         if(moved&&Math.hypot(ev.clientX-x0,ev.clientY-y0)>8)mk(act.a,act.p,bId,{x:Math.round(q.x),y:Math.round(q.y)});
         else if(act.pend&&act.pend.kind===act.kind)mk(act.pend.a,act.pend.p,act.a,act.p);
         else{ui.wbPend={kind:act.kind,a:act.a,p:act.p};toast('اضغط على نقطة النهاية أو على عنصر آخر')}}};
@@ -1792,7 +1793,7 @@ function wbInit(){const vp=$('#wbvp'),p=proj(ui.pid);if(!vp||!p||vp._init)return
     else if(b.dataset.wbz==='full'){ui.wbFull=!ui.wbFull;$('#wb').classList.toggle('full',ui.wbFull);document.body.classList.toggle('wb-lock',ui.wbFull);setTimeout(()=>wbFit(p),30)}
     else if(b.dataset.wbc&&it){wbSnap(p);it.c=b.dataset.wbc;ui.wbLastC=it.c;wbSave(p,it);wbDraw()}
     else if(b.dataset.wbink&&it){wbSnap(p);if(it.t==='text')it.ink=b.dataset.wbink;else it.c=b.dataset.wbink;ui.wbInk=b.dataset.wbink;wbSave(p,it);wbDraw()}
-    else if(b.dataset.wbfs&&it){wbSnap(p);it.fs=Math.max(14,Math.min(72,(it.fs||22)+(+b.dataset.wbfs)*4));wbSave(p,it);wbDraw()}
+    else if(b.dataset.wbfs&&it){wbSnap(p);const df=it.t==='text'?22:15;it.fs=Math.max(10,Math.min(72,(it.fs||df)+(+b.dataset.wbfs)*(it.t==='text'?4:2)));wbSave(p,it);wbDraw()}
     else if(b.hasAttribute('data-wbflip')&&it){wbSnap(p);it.t=it.t==='arrow'?'line':'arrow';wbSave(p,it);wbLines();wbSelBar()}
     else if(b.hasAttribute('data-wbedit')&&it)wbEditText(p,it.id);
     else if(b.hasAttribute('data-wbdup')&&it)wbPaste(p,{items:[JSON.parse(JSON.stringify(it))],n:0});
@@ -1899,13 +1900,13 @@ function kpiForm(p,k){modal({title:k?'تعديل المؤشر':'مؤشر جدي�
   onSubmit:v=>{p.kpis=p.kpis||[];const o={name:v.name,target:toNum(v.target),actual:toNum(v.actual),unit:v.unit||'',note:v.note||'',u:me().id,at:Date.now()};if(k)Object.assign(k,o);else p.kpis.push(Object.assign({id:uid('kp')},o));touch(p,'plan');setSeen(p.id,'plan');save();setTimeout(render,0)}})}
 
 /* ----- الموارد البشرية ----- */
-const HSUB=[['org','الهيكلية'],['pay','جدول الرواتب'],['st','إحصائيات']];
+const HSUB=[['st','إحصائيات'],['org','الهيكلية'],['pay','جدول الرواتب']];
 function hrList(p){return p.hr||(p.hr=[])}
 function hrKids(xs,id){return xs.filter(x=>x.parent===id)}
 function hrRoots(xs){return xs.filter(x=>!x.parent||!xs.some(y=>y.id===x.parent))}
 function hrOrder(xs){const out=[],seen=new Set();const walk=(x,d)=>{if(seen.has(x.id))return;seen.add(x.id);out.push({x,d});hrKids(xs,x.id).forEach(c=>walk(c,d+1))};hrRoots(xs).forEach(x=>walk(x,0));xs.forEach(x=>{if(!seen.has(x.id))walk(x,0)});return out}
 function hrTotals(xs){const f=xs.filter(x=>!x.vacant),v=xs.filter(x=>x.vacant);return {n:xs.length,f:f.length,v:v.length,sf:f.reduce((a,x)=>a+(x.salary||0),0),sv:v.reduce((a,x)=>a+(x.salary||0),0)}}
-function hrView(p){const SV=canSal(p),xs=hrList(p),ed=canHR(),s=HSUB.some(x=>x[0]===ui.hsub)?ui.hsub:'org',T=hrTotals(xs),tOnly=prefs.hrMode==='t';
+function hrView(p){const SV=canSal(p),xs=hrList(p),ed=canHR(),s=HSUB.some(x=>x[0]===ui.hsub)?ui.hsub:'st',T=hrTotals(xs),tOnly=prefs.hrMode==='t';
   let h='<div class="lsecs" role="tablist">'+HSUB.map(x=>'<button type="button" role="tab" class="'+(s===x[0]?'on':'')+'" aria-selected="'+(s===x[0])+'" data-a="hsub" data-v="'+x[0]+'">'+x[1]+(x[0]==='org'?'<span class="n">'+xs.length+'</span>':'')+'</button>').join('')+'</div>';
   h+='<div class="bar-h"><h2>'+({org:'الهيكلية التنظيمية',pay:'جدول الرواتب',st:'إحصائيات الموارد البشرية'}[s])+'</h2><span class="sp"></span>'+(s==='org'&&xs.length?'<div class="seg" role="group" aria-label="طريقة العرض"><button type="button" data-a="hrMode" data-v="d" class="'+(tOnly?'':'on')+'">التفاصيل</button><button type="button" data-a="hrMode" data-v="t" class="'+(tOnly?'on':'')+'">المسميات فقط</button></div>':'')+(ed?'<button class="btn sm primary" type="button" data-a="hrNew">'+ic('plus')+'وظيفة</button>':'')+'</div>';
   if(!xs.length)return h+'<div class="empty"><span class="e">'+ic('flow')+'</span><b>لا وظائف بعد</b><span>'+(ed?'ابدأ بالمدير التنفيذي، ثم أضف الوظائف التابعة له لتُرسم الهيكلية تلقائياً':'تُضاف الهيكلية من قسم الموارد البشرية')+'</span></div>';
@@ -2099,18 +2100,18 @@ function wbMake(p,kind,a,b,moved){const D0={note:[200,130],frame:[440,300],rect:
   const it=Object.assign({id,x:Math.round(x),y:Math.round(y),w:Math.round(w),h:Math.round(h),txt:kind==='frame'?'إطار':''},kind==='note'?{t:'note',c:ui.wbLastC||'y'}:kind==='frame'?{t:'frame'}:{t:'shape',sh:kind,c:ui.wbShC||'b'});
   wbSnap(p);if(kind==='frame')wbItems(p).unshift(it);else wbItems(p).push(it);wbTool('sel');wbSave(p,it);wbDraw();wbSelect(id);const e=$('.wb-empty');if(e)e.remove();if(kind!=='frame')wbEditText(p,id);return it}
 function wbDraw(){const p=proj(ui.pid),w=$('#wbw');if(!p||!w)return;const its=wbItems(p),sel=ui.wbSel,ed=wbEd();
-  const hs=t=>ed?(t==='text'?['e','w']:HND).map(h=>'<span class="wb-h h-'+h+'" data-h="'+h+'"></span>').join(''):'';
+  const hs=t=>ed?(t==='text'?['e','w']:HND).map(h=>'<span class="wb-h h-'+h+'" data-h="'+h+'"></span>').join('')+portsH(t):'';
   const fr=its.filter(i=>i.t==='frame'),sh=its.filter(i=>i.t==='shape'),nt=its.filter(i=>(i.t==='note'||i.t==='text')&&!i.fin);
   w.innerHTML=fr.map(i=>'<div class="wbi wf'+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+i.w+'px;height:'+i.h+'px"><div class="wb-t wf-t" dir="auto">'+esc(i.txt||'')+'</div>'+hs('frame')+'</div>').join('')+
-    sh.map(i=>'<div class="wbi wsh sh-'+(i.sh||'rect')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||170)+'px;height:'+(i.h||100)+'px;--sc:'+(SHC[i.c]||SHC.b)+'"><svg class="sh-bg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+(SHP[i.sh]||SHP.rect)+'</svg><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+hs('shape')+'</div>').join('')+
-    nt.map(i=>'<div class="wbi '+(i.t==='note'?'wn'+(i.xck?' xck':''):'wt')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||(i.t==='note'?200:260))+'px;'+(i.t==='note'?'min-height:'+(i.h||130)+'px;background:'+(WBC[i.c]||WBC.y):'font-size:'+(i.fs||22)+'px;color:'+(i.ink||''))+'"><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+(i.t==='note'?wnFoot(p,i):'')+hs(i.t)+'</div>').join('')+
+    sh.map(i=>'<div class="wbi wsh sh-'+(i.sh||'rect')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||170)+'px;height:'+(i.h||100)+'px;--sc:'+(SHC[i.c]||SHC.b)+(i.fs?';font-size:'+i.fs+'px':'')+'"><svg class="sh-bg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+(SHP[i.sh]||SHP.rect)+'</svg><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+hs('shape')+'</div>').join('')+
+    nt.map(i=>'<div class="wbi '+(i.t==='note'?'wn'+(i.xck?' xck':''):'wt')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||(i.t==='note'?200:260))+'px;'+(i.t==='note'?'min-height:'+(i.h||130)+'px;background:'+(WBC[i.c]||WBC.y)+(i.fs?';font-size:'+i.fs+'px':''):'font-size:'+(i.fs||22)+'px;color:'+(i.ink||''))+'"><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+(i.t==='note'?wnFoot(p,i):'')+hs(i.t)+'</div>').join('')+
     '<svg class="wb-svg" id="wbsvg"><defs>'+WINK.concat(['#4B8BF5']).map((c,k)=>'<marker id="wah'+k+'" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="'+c+'"/></marker>').join('')+'</defs></svg><div class="wb-ov" id="wbov"></div>';
   wbLines();wbApply();wbSelBar();wsideDraw()}
 function wbSelBar(){const b=$('#wbsel'),p=proj(ui.pid);if(!b||!p)return;const it=ui.wbSel&&wbFind(p,ui.wbSel);if(!it||!wbEd()){b.innerHTML='';return}
   let h=it.t==='note'?Object.keys(WBC).map(k=>'<button type="button" class="wcol'+(it.c===k?' on':'')+'" data-wbc="'+k+'" style="background:'+WBC[k]+'" aria-label="لون"></button>').join(''):
     it.t==='shape'?Object.keys(SHC).map(k=>'<button type="button" class="wcol'+((it.c||'b')===k?' on':'')+'" data-wbshc="'+k+'" style="background:'+SHC[k]+'" aria-label="لون"></button>').join('')+'<span class="wsep"></span>'+['rect','ell','dia'].map(k=>'<button type="button" class="wtb'+(it.sh===k?' on':'')+'" data-wbsh="'+k+'" aria-label="'+({rect:'مستطيل',ell:'دائرة',dia:'معيّن'}[k])+'"><svg viewBox="0 0 100 100" style="width:16px;height:16px">'+SHP[k]+'</svg></button>').join(''):
     it.t!=='frame'?WINK.map(c=>'<button type="button" class="wcol ink'+((it.c||it.ink||WINK[0])===c?' on':'')+'" data-wbink="'+c+'" style="background:'+c+'" aria-label="لون"></button>').join(''):'';
-  if(it.t==='text')h+='<button type="button" class="wtb" data-wbfs="-1" aria-label="تصغير الخط">A−</button><button type="button" class="wtb" data-wbfs="1" aria-label="تكبير الخط">A+</button>';
+  if(it.t==='text'||it.t==='note'||it.t==='shape')h+='<span class="wsep"></span><button type="button" class="wtb" data-wbfs="-1" title="تصغير الخط" aria-label="تصغير الخط">A−</button><span class="wfs" title="حجم الخط">'+(it.fs||(it.t==='text'?22:15))+'</span><button type="button" class="wtb" data-wbfs="1" title="تكبير الخط" aria-label="تكبير الخط">A+</button>';
   if(isLineW(it))h+='<button type="button" class="wtb" data-wbflip title="'+(it.t==='arrow'?'تحويل إلى خط':'تحويل إلى سهم')+'" aria-label="تحويل">'+(it.t==='arrow'?'—':'→')+'</button>';
   b.innerHTML=h+(isBoxW(it)?'<button type="button" class="wtb" data-wbedit title="تعديل النص (Enter)" aria-label="تعديل النص">'+ic('edit')+'</button><button type="button" class="wtb" data-wbdup title="تكرار (Ctrl+D)" aria-label="تكرار"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3"/></svg></button>':'')+'<button type="button" class="wtb del" data-wbdel title="حذف (Delete)" aria-label="حذف">'+ic('trash')+'</button>'}
 document.addEventListener('click',e=>{const b=e.target.closest('#wbsel [data-wbshc],#wbsel [data-wbsh]');if(!b||!wbEd())return;const p=proj(ui.pid),it=p&&ui.wbSel&&wbFind(p,ui.wbSel);if(!it||it.t!=='shape')return;
@@ -2156,7 +2157,7 @@ function bPlan(p,y,m,k){const c=bCell(p,y,m),v=c[k];if(v&&v.p!=null)return v.p;r
 const bIsAuto=(p,y,m,k)=>k==='hr'&&(y+'-'+m)>=curMon()&&!((bCell(p,y,m).hr||{}).p!=null);
 function bAct(p,y,m,k){const c=bCell(p,y,m);if(!c.closed)return null;const v=c[k]||{};return v.a!=null?v.a:bPlan(p,y,m,k)}
 function bState(p,y,m){const c=bCell(p,y,m),ym=y+'-'+m,cm=curMon();return c.closed?'closed':ym<cm?(BK.some(([k])=>(c[k]||{}).p!=null)?'due':'none'):ym===cm?'cur':'plan'}
-const BST={none:['بلا بيانات','plan'],closed:['مُغلق · فعلي','ok'],due:['بانتظار التسكير','due'],cur:['الشهر الحالي · مخطط','cur'],plan:['مخطط','plan']};
+const BST={none:['بلا بيانات','plan'],closed:['مُغلق · فعلي','ok'],due:['بانتظار الإغلاق','due'],cur:['الشهر الحالي · مخطط','cur'],plan:['مخطط','plan']};
 const vari=(pl,ac)=>{const d=pl-ac;return '<span class="bvar '+(d>=0?'sv':'ov')+'" title="'+(d>=0?'وفر':'تجاوز')+'">'+(d>=0?'+':'−')+usd(Math.abs(d))+'</span>'};
 function budYears(p){const ys=new Set([TODAY.slice(0,4)]);Object.keys(bud(p).y||{}).forEach(y=>ys.add(y));return [...ys].sort()}
 function budView(p){const s=BSUB.some(x=>x[0]===ui.bsub)?ui.bsub:'all',y=ui.byr||TODAY.slice(0,4),ys=budYears(p);if(!ys.includes(y))ys.push(y);
@@ -2173,7 +2174,7 @@ function budAll(p,y){const ed=canBud(),b=bud(p),cap=b.cap||0,T=budTot(p,y);
   h+='<div class="bar-h" style="margin-top:22px"><h2>المخطط والفعلي شهرياً</h2><span class="sp"></span><span class="caplg"><span><i class="pl"></i>مخطط</span><span><i class="a"></i>فعلي</span></span></div><div class="mbars pa">'+rows.map((r,i)=>'<div class="mb'+(r.st==='cur'?' now':'')+'" title="'+esc(MON[i])+': مخطط '+usd(r.pl)+(r.ac!=null?' · فعلي '+usd(r.ac):'')+'"><span class="mb-b2"><i class="pl" style="height:'+Math.round(r.pl/mx*140)+'px"></i><i class="a" style="height:'+Math.round((r.ac||0)/mx*140)+'px"></i></span><span class="mb-l">'+esc(MON[i])+'</span></div>').join('')+'</div>';
   h+='<div class="bar-h" style="margin-top:22px"><h2>الأشهر</h2><small class="note-s">بالدولار · الأشهر المفتوحة مخطط، والمغلقة فعلي</small></div><div class="tbw"><table class="dtab btab"><thead><tr><th>الشهر</th>'+BK.map(k=>'<th class="nm">'+k[1]+'</th>').join('')+'<th class="nm">المخطط</th><th class="nm">الفعلي</th><th class="nm">الفرق</th><th>الحالة</th>'+(ed?'<th></th>':'')+'</tr></thead><tbody>'+
     rows.map((r,i)=>'<tr class="st-'+r.st+'"><th scope="row">'+MON[i]+'</th>'+BK.map(([k])=>{const pl=bPlan(p,y,r.m,k);return '<td class="nm">'+(r.st==='closed'?usd(bAct(p,y,r.m,k)):'<span class="pl">'+usd(pl)+'</span>')+'</td>'}).join('')+'<td class="nm">'+usd(r.pl)+'</td><td class="nm">'+(r.ac!=null?'<b>'+usd(r.ac)+'</b>':'—')+'</td><td class="nm">'+(r.ac!=null?vari(r.pl,r.ac):'')+'</td><td><span class="bst '+BST[r.st][1]+'">'+BST[r.st][0]+'</span></td>'+
-      (ed?'<td>'+(r.st==='closed'?(isCom(cur())?'<button class="btn sm ghost" type="button" data-a="budOpen" data-m="'+r.m+'">إعادة فتح</button>':''):'<button class="btn sm'+(r.st==='due'?' primary':' ghost')+'" type="button" data-a="budClose" data-m="'+r.m+'">تسكير</button>')+'</td>':'')+'</tr>').join('')+
+      (ed?'<td>'+(r.st==='closed'?(isCom(cur())?'<button class="btn sm ghost" type="button" data-a="budOpen" data-m="'+r.m+'">إعادة فتح</button>':''):'<button class="btn sm'+(r.st==='due'?' primary':' ghost')+'" type="button" data-a="budClose" data-m="'+r.m+'">إغلاق</button>')+'</td>':'')+'</tr>').join('')+
     '</tbody><tfoot><tr><th>السنة</th>'+BK.map(([k])=>'<td class="nm"><b>'+usd(rows.reduce((a,r)=>a+(r.st==='closed'?bAct(p,y,r.m,k):bPlan(p,y,r.m,k)),0))+'</b></td>').join('')+'<td class="nm"><b>'+usd(T.pl)+'</b></td><td class="nm"><b>'+usd(T.ac)+'</b></td><td class="nm">'+(T.plC?vari(T.plC,T.ac):'')+'</td><td></td>'+(ed?'<td></td>':'')+'</tr></tfoot></table></div>';
   const old=(b.rows||[]).filter(r=>Object.keys(r.v||{}).length);
   if(old.length){const cs=budCats(p).concat(b.gone||[]);h+='<details class="bold"><summary>مصاريف مسجّلة بالشكل السابق · '+old.length+'</summary><div class="tbw"><table class="dtab"><tbody>'+old.map(r=>'<tr><th>'+esc(monLbl(r.m))+'</th><td>'+Object.keys(r.v).map(k=>{const c=cs.find(x=>x.id===k);return esc(c?c.n:k)+': '+usd(r.v[k])}).join(' · ')+'</td></tr>').join('')+'</tbody></table></div></details>'}
@@ -2185,7 +2186,7 @@ function budCat(p,y,k){const ed=canBud(),lbl=BK.find(x=>x[0]===k)[1];let pl=0,ac
   for(let i=0;i<12;i++){const m=M2(i),st=bState(p,y,m),v=bPlan(p,y,m,k),au=bIsAuto(p,y,m,k),a=st==='closed'?bAct(p,y,m,k):null;pl+=v;if(a!=null){ac+=a;plC+=v}
     h+='<tr class="st-'+st+'"><th scope="row">'+MON[i]+'</th><td class="nm">'+(ed&&st!=='closed'?'<input class="bcell bpl" inputmode="decimal" dir="ltr" data-y="'+y+'" data-m="'+m+'" data-k="'+k+'" value="'+(au?'':(v||''))+'" placeholder="'+(au?num(v):'0')+'" aria-label="'+lbl+' · '+MON[i]+' · مخطط">'+(au&&v?'<small class="auto">تلقائي</small>':''):usd(v)+(au&&st!=='closed'?' <small class="auto">تلقائي</small>':''))+'</td><td class="nm">'+(a!=null?'<b>'+usd(a)+'</b>':'—')+'</td><td class="nm">'+(a!=null?vari(v,a):'')+'</td><td><span class="bst '+BST[st][1]+'">'+BST[st][0]+'</span></td></tr>'}
   h+='</tbody><tfoot><tr><th>السنة</th><td class="nm"><b>'+usd(pl)+'</b></td><td class="nm"><b>'+usd(ac)+'</b></td><td class="nm">'+(plC?vari(plC,ac):'')+'</td><td></td></tr></tfoot></table></div>';
-  if(ed)h+='<p class="note-s">اكتب المخطط لكل شهر مفتوح، يُحفظ تلقائياً. الفعلي يُدخل عند «تسكير» الشهر من الميزانية العامة، وبعدها يُقفل الشهر.</p>';
+  if(ed)h+='<p class="note-s">اكتب المخطط لكل شهر مفتوح، يُحفظ تلقائياً. الفعلي يُدخل عند «إغلاق» الشهر من الميزانية العامة، وبعدها يُقفل الشهر.</p>';
   return h}
 document.addEventListener('change',e=>{const t=e.target;if(!t.classList||!t.classList.contains('bpl'))return;const p=proj(ui.pid);if(!p||!canBud())return;const y=t.dataset.y,m=t.dataset.m,k=t.dataset.k;if(bCell(p,y,m).closed)return;
   const c=bSet(p,y,m),raw=String(t.value).trim();c[k]=c[k]||{};if(raw===''&&k==='hr')delete c[k].p;else c[k].p=toNum(raw);c.u=me().id;c.at=Date.now();touch(p,'plan');save();ui.budDirty=true;
@@ -2195,10 +2196,61 @@ document.addEventListener('keydown',e=>{const t=e.target;if(e.key==='Enter'&&t.c
 Object.assign(A,{
   budSub:d=>{ui.bsub=d.v;render()},budYr:d=>{ui.byr=String(d.v);render()},
   budClose:d=>{const p=proj(ui.pid),y=ui.byr||TODAY.slice(0,4),m=d.m;if(!canBud()||bCell(p,y,m).closed)return;const mi=(+m)-1;
-    modal({title:'تسكير '+MON[mi]+' '+y,submit:'تسكير الشهر',body:'<p class="note-s">اكتب المصروف الفعلي لكل قسم. بعد التسكير يُقفل الشهر، ولا يعيد فتحه إلا عضو لجنة.</p>'+BK.map(([k,l])=>{const pl=bPlan(p,y,m,k);return '<div class="f"><label for="bc'+k+'">'+l+' · <span class="note-s">المخطط '+usd(pl)+'</span></label><input class="fi" id="bc'+k+'" name="'+k+'" inputmode="decimal" dir="ltr" value="'+(((bCell(p,y,m)[k]||{}).a!=null)?bCell(p,y,m)[k].a:pl)+'"></div>'}).join('')+'<div class="f"><label for="bcn2">ملاحظة (اختياري)</label><input class="fi" id="bcn2" name="note" placeholder="سبب الفرق مثلاً"></div>',
+    modal({title:'إغلاق '+MON[mi]+' '+y,submit:'إغلاق الشهر',body:'<p class="note-s">اكتب المصروف الفعلي لكل قسم. بعد الإغلاق يُقفل الشهر، ولا يعيد فتحه إلا عضو لجنة.</p>'+BK.map(([k,l])=>{const pl=bPlan(p,y,m,k);return '<div class="f"><label for="bc'+k+'">'+l+' · <span class="note-s">المخطط '+usd(pl)+'</span></label><input class="fi" id="bc'+k+'" name="'+k+'" inputmode="decimal" dir="ltr" value="'+(((bCell(p,y,m)[k]||{}).a!=null)?bCell(p,y,m)[k].a:pl)+'"></div>'}).join('')+'<div class="f"><label for="bcn2">ملاحظة (اختياري)</label><input class="fi" id="bcn2" name="note" placeholder="سبب الفرق مثلاً"></div>',
       onSubmit:v=>{const c=bSet(p,y,m);BK.forEach(([k])=>{c[k]=c[k]||{};if(c[k].p==null)c[k].p=bPlan(p,y,m,k);c[k].a=toNum(v[k])});c.note=v.note||'';c.closed={u:me().id,at:Date.now()};touch(p,'plan');save();setTimeout(()=>{render();toast('أُغلق '+MON[mi]+' '+y)},0)}})},
   budOpen:d=>{const p=proj(ui.pid),y=ui.byr||TODAY.slice(0,4),m=d.m;if(!isCom(cur()))return;confirmBox('إعادة فتح '+MON[(+m)-1],'يعود الشهر مفتوحاً للتعديل، وتبقى الأرقام الفعلية المدخلة محفوظة.','إعادة فتح',()=>{const c=bSet(p,y,m);delete c.closed;touch(p,'plan');save();render()})}
 });
+
+/* ===================== الإصدار 21: أسهم بزوايا قائمة ونقاط ربط · حجم الخط · الكتابة بنقرة · الشطب ثم المنتهية ===================== */
+/* نقاط الربط الأربع: فوق، تحت، يمين، يسار. السهم يتصل بها ويأخذ زوايا قائمة */
+const PDIR={t:[0,-1],b:[0,1],l:[-1,0],r:[1,0]};
+function wbPort(r,s){return s==='t'?{x:r.x+r.w/2,y:r.y}:s==='b'?{x:r.x+r.w/2,y:r.y+r.h}:s==='l'?{x:r.x,y:r.y+r.h/2}:{x:r.x+r.w,y:r.y+r.h/2}}
+function autoSide(r,t){const dx=t.x-(r.x+r.w/2),dy=t.y-(r.y+r.h/2);return Math.abs(dx)*r.h>Math.abs(dy)*r.w?(dx>0?'r':'l'):(dy>0?'b':'t')}
+/* الجهة التي أُفلت عندها السهم: قرب الحافة أو على نقطة الربط = جهة ثابتة؛ في وسط العنصر = تلقائي */
+function wbSideAt(id,pt){const p=proj(ui.pid),r=p&&wbRect(p,id);if(!r||!pt)return null;const u=(pt.x-r.x)/r.w,v=(pt.y-r.y)/r.h;
+  const c=[['t',.22-v],['b',v-.78],['l',.22-u],['r',u-.78]].filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);return c.length?c[0][0]:null}
+function elbow(a,sa,b,sb){if(!sa&&!sb)return [a,b];const S=20,st=(q,s)=>s?{x:q.x+PDIR[s][0]*S,y:q.y+PDIR[s][1]*S}:q;
+  const a1=st(a,sa),b1=st(b,sb),hA=sa?PDIR[sa][0]!==0:null,hB=sb?PDIR[sb][0]!==0:null;let mid;
+  if(sa&&sb){if(hA&&hB){const mx=(a1.x+b1.x)/2;mid=[{x:mx,y:a1.y},{x:mx,y:b1.y}]}else if(!hA&&!hB){const my=(a1.y+b1.y)/2;mid=[{x:a1.x,y:my},{x:b1.x,y:my}]}else if(hA)mid=[{x:b1.x,y:a1.y}];else mid=[{x:a1.x,y:b1.y}]}
+  else if(sa)mid=hA?[{x:b.x,y:a1.y}]:[{x:a1.x,y:b.y}];else mid=hB?[{x:a.x,y:b1.y}]:[{x:b1.x,y:a.y}];
+  const raw=[a,a1].concat(mid,[b1,b]).map(q=>({x:Math.round(q.x),y:Math.round(q.y)})),out=[];
+  raw.forEach(q=>{const l=out[out.length-1];if(l&&l.x===q.x&&l.y===q.y)return;const l2=out[out.length-2];if(l&&l2&&((l2.x===l.x&&l.x===q.x)||(l2.y===l.y&&l.y===q.y)))out[out.length-1]=q;else out.push(q)});return out}
+const ptsD=pts=>'M'+pts.map(q=>q.x+' '+q.y).join(' L');
+function wbEnds(p,i){const A1=i.a?wbRect(p,i.a):null,B1=i.b?wbRect(p,i.b):null;
+  const ca=A1?{x:A1.x+A1.w/2,y:A1.y+A1.h/2}:{x:i.x1,y:i.y1},cb=B1?{x:B1.x+B1.w/2,y:B1.y+B1.h/2}:{x:i.x2,y:i.y2};
+  if(ca.x==null||cb.x==null||isNaN(ca.x)||isNaN(cb.x))return null;
+  const sa=A1?(i.sa||autoSide(A1,cb)):null,sb=B1?(i.sb||autoSide(B1,ca)):null,a=A1?wbPort(A1,sa):ca,b=B1?wbPort(B1,sb):cb;
+  return {a,b,pts:elbow(a,sa,b,sb)}}
+const portsH=t=>t==='text'||t==='frame'?'':['t','b','l','r'].map(s=>'<span class="wb-port p-'+s+'" data-port="'+s+'" title="اسحب من هنا لرسم سهم"></span>').join('');
+
+/* ---------- الشطب ثم المنتهية، وخيارات كاملة للمنتهية ---------- */
+Object.assign(A,{
+  wnChk:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it)return;
+    if(wbEd()){if(!it.xck){it.xck={u:me().id,at:Date.now()};touch(p,'found');save();wbDraw();toast('شُطبت · اضغط مرة ثانية لنقلها إلى المنتهية');return}
+      const prev=it.xck;it.fin={u:me().id,at:Date.now()};touch(p,'found');save();wbDraw();toast('انتقلت إلى الملاحظات المنتهية',null,()=>{delete it.fin;it.xck=prev;save();wbDraw()});return}
+    if(!isX(p))return;if(it.xck)it.xck=null;else{it.xck={u:me().id,at:Date.now()};notify([p.memberId],'bd','أُنجزت: '+(firstLine(it.txt)||'نوت'),shortName(me().id)+' · '+p.name,{p:p.id,tab:'found'})}touch(p,'found');save();wbDraw()},
+  wnUnx:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it||!(wbEd()||isX(p)))return;it.xck=null;touch(p,'found');save();wbDraw();toast('أُلغي الشطب')},
+  wnDel:d=>{const p=proj(ui.pid),its=wbItems(p),it=its.find(x=>x.id===d.id);if(!it||!wbEd())return;
+    confirmBox('حذف الملاحظة نهائياً','ستُحذف «'+(firstLine(it.txt)||'نوت')+'» مع كل مستجداتها، ولن تعود إلى اللوحة.','حذف نهائي',()=>{const i=its.indexOf(it),ls=its.filter(x=>isLineW(x)&&(x.a===it.id||x.b===it.id));p.wb=its.filter(x=>x!==it&&!ls.includes(x));touch(p,'found');save();wsideDraw();
+      toast('حُذفت الملاحظة',null,()=>{const cur2=wbItems(p);cur2.splice(Math.min(i,cur2.length),0,it);ls.forEach(l=>cur2.push(l));save();wbDraw()})})},
+  wnCopy:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it)return;try{navigator.clipboard.writeText(it.txt||'').then(()=>toast('نُسخ النص')).catch(()=>toast('تعذّر النسخ','error'))}catch(e){toast('تعذّر النسخ','error')}}
+});
+function wnFoot(p,i){const x=isX(p),c=wbEd(),uc=wnLast(i,'c'),ux=wnLast(i,'x'),n=(i.upds||[]).length;
+  const by=i.u&&user(i.u)?'<span class="wb-by" title="'+esc(uname(i.u))+'">'+esc(shortName(i.u))+'</span>':'';
+  const tt=c?(i.xck?'مشطوبة · اضغط لنقلها إلى المنتهية':'شطب الملاحظة'):(i.xck?'إلغاء الشطب':'تم: تظهر مشطوبة للجنة');
+  return '<div class="wn-f">'+updBox(uc,'c','wn-up')+updBox(ux,'x','wn-up')+
+    '<div class="wn-a">'+(x||c?'<button type="button" class="wn-b" data-a="wnUpd" data-id="'+i.id+'">'+ic('edit')+(c?'ردّ اللجنة':'المستجدات')+'</button>':'')+(n>2||(n>1&&(!uc||!ux))?'<button type="button" class="wn-b" data-a="wnHist" data-id="'+i.id+'" title="كل المستجدات">'+n+'</button>':'')+'<span class="sp"></span>'+by+
+    (x||c?'<button type="button" class="wn-c'+(i.xck?' on':'')+(c&&i.xck?' com fin2':'')+'" data-a="wnChk" data-id="'+i.id+'" title="'+tt+'" aria-label="'+tt+'">'+(c&&i.xck?ic('fwd'):ic('check'))+'</button>':(i.xck?'<span class="wn-c on" title="مشطوبة">'+ic('check')+'</span>':''))+'</div></div>'}
+function wsideHtml(p){const ns=wbItems(p).filter(i=>i.t==='note'),act=ns.filter(i=>!i.fin),fin=ns.filter(i=>i.fin).sort((a,b)=>(b.fin.at||0)-(a.fin.at||0)),tab=ui.wsTab==='fin'?'fin':'act',x=isX(p),c=wbEd();
+  let h='<div class="ws-tabs" role="tablist"><button type="button" role="tab" class="'+(tab==='act'?'on':'')+'" data-a="wsTab" data-v="act">الملاحظات<span class="n">'+act.length+'</span></button><button type="button" role="tab" class="'+(tab==='fin'?'on':'')+'" data-a="wsTab" data-v="fin">المنتهية<span class="n">'+fin.length+'</span></button></div>';
+  const xs=tab==='act'?act.slice().sort((a,b)=>(!!a.xck-!!b.xck)||((b.at||0)-(a.at||0))):fin;
+  if(!xs.length)return h+'<div class="ws-empty">'+(tab==='act'?(c?'ارسم ستيكي نوت على اللوحة، وستظهر هنا كقائمة لا تضيع منها ملاحظة.':'لا ملاحظات من اللجنة بعد.'):'تظهر هنا الملاحظات التي أنهتها اللجنة، محفوظة مع مستجداتها.')+'</div>';
+  const bt=(a,id,icn,t,cls)=>'<button type="button" class="ws-btn'+(cls?' '+cls:'')+'" data-a="'+a+'" data-id="'+id+'" title="'+t+'" aria-label="'+t+'">'+ic(icn)+'<span>'+t+'</span></button>';
+  return h+'<div class="ws-list">'+xs.map(i=>'<div class="ws-i'+(i.xck&&!i.fin?' xck':'')+(i.fin?' fin':'')+'" style="--nc:'+(WBC[i.c]||WBC.y)+'"><button type="button" class="ws-t'+((i.txt||'').trim()?'':' emp')+'" data-a="'+(i.fin?'wnHist':'wnLoc')+'" data-id="'+i.id+'" title="'+(i.fin?'عرض المستجدات':'إظهارها على اللوحة')+'">'+esc((i.txt||'').trim()||'نوت بلا نص')+'</button>'+
+      updBox(wnLast(i,'c'),'c','ws-up')+updBox(wnLast(i,'x'),'x','ws-up')+
+      (i.fin?'<small class="ws-m">أُنهيت · '+esc(shortName(i.fin.u))+' · '+when(i.fin.at)+'</small><div class="ws-a ws-opts">'+bt('wnHist',i.id,'list','المستجدات')+bt('wnCopy',i.id,'f_p','نسخ النص')+(c?bt('wnBack',i.id,'reset','إعادة إلى اللوحة')+bt('wnDel',i.id,'trash','حذف نهائي','del'):'')+'</div>':
+        '<div class="ws-a">'+(i.xck?'<small class="ok">'+ic('check')+'مشطوبة · '+esc(shortName(i.xck.u))+'</small>':'<small>'+(i.at?when(i.at):'')+'</small>')+'<span class="sp"></span>'+((x||c)?'<button type="button" class="btn sm ghost" data-a="wnUpd" data-id="'+i.id+'">'+ic('edit')+(c?'ردّ اللجنة':'المستجدات')+'</button>'+(i.xck?'<button type="button" class="btn sm ghost" data-a="wnUnx" data-id="'+i.id+'" title="إلغاء الشطب">'+ic('reset')+'</button>':'')+'<button type="button" class="wn-c'+(i.xck?' on':'')+(c&&i.xck?' com fin2':'')+'" data-a="wnChk" data-id="'+i.id+'" aria-label="'+(c&&i.xck?'نقل إلى المنتهية':'شطب')+'" title="'+(c&&i.xck?'نقل إلى المنتهية':'شطب')+'">'+(c&&i.xck?ic('fwd'):ic('check'))+'</button>':'')+'</div>')+'</div>').join('')+'</div>'}
+RO_OK.push('wnCopy');
 
 boot();
 })();

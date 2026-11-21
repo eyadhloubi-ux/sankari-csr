@@ -279,7 +279,7 @@ function migrateP(p){p.sections=p.sections||[];p.steps=p.steps||[];p.requests=p.
     p.requests=p.requests.filter(r=>!pr.includes(r))});
   p.ops.forEach(o=>o.items.forEach(it=>{if(it.rid&&!it.tid){const r=p.requests.find(x=>x.id===it.rid);if(!r)it.rid=null}}))}
 function migrateS(p){p.requests=p.requests||[];p.requests.forEach(r=>(r.tasks||[]).forEach(t=>{if(t.pending)delete t.pending}));if(!p.requests.some(r=>r.kind==='chat'))p.requests.push({id:'pc'+p.id,kind:'chat',title:'محادثة المشروع',by:p.memberId||'',at:0,done:false,msgs:[],seen:{},tasks:[]});p.stages.forEach(s=>{if(!s.status)s.status='todo'});if(p.smode!=='boxes')p.smode=p.smode||'stages';(p.requests||[]).forEach(syncReq)}
-function normalizeData(d){d.users=d.users||[];d.projects=d.projects||[];d.events=d.events||[];d.seen=d.seen||{};d.perm=d.perm||{};d.committee=d.committee||{sections:[]};d.meetings=Array.isArray(d.meetings)?d.meetings:[];d.notes=Array.isArray(d.notes)?d.notes:[];d.meetings.forEach(m=>{m.inv=m.inv||[];m.rsvp=m.rsvp||{};m.agenda=m.agenda||[]});d.projects.forEach(migrateP);d.projects.forEach(p=>{if(!['exec','comm','study','arch'].includes(p.cat))p.cat=p.cat==='prep'?'study':(p.managerId||(p.staffIds||[]).length?'exec':'comm')});d.projects.forEach(migrateS);d.v=7;return d}
+function normalizeData(d){d.users=d.users||[];d.projects=d.projects||[];d.events=d.events||[];d.seen=d.seen||{};d.perm=d.perm||{};d.committee=d.committee||{sections:[]};d.meetings=Array.isArray(d.meetings)?d.meetings:[];d.notes=Array.isArray(d.notes)?d.notes:[];d.meetings.forEach(m=>{m.inv=m.inv||[];m.rsvp=m.rsvp||{};m.agenda=m.agenda||[]});d.projects.forEach(migrateP);d.projects.forEach(p=>{if(!['exec','comm','arch'].includes(p.cat))p.cat=(p.cat==='prep'||p.cat==='study')?'arch':(p.managerId||(p.staffIds||[]).length?'exec':'comm')});d.projects.forEach(migrateS);d.v=7;return d}
 const stripPw=d=>{(d.users||[]).forEach(u=>{delete u.pw});return d};
 const byId=a=>new Map((a||[]).map(x=>[x.id,x]));
 function mergeArr(b,l,sv,deep){b=b||[];l=l||[];sv=sv||[];const bm=byId(b),lm=byId(l);
@@ -494,7 +494,7 @@ function renderTop(){
   $('#meetBtn').classList.toggle('on',ui.view==='meet'||ui.view==='meetOne');const pi=myPendInv().length;$('#meetN').hidden=!pi;$('#meetN').textContent=pi;
   const nu=nUnread();$('#bellw').innerHTML='<button class="tb bell'+(ui.bell?' on':'')+'" type="button" data-a="bell" aria-label="الإشعارات" aria-expanded="'+!!ui.bell+'"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 004 0"/></svg>'+(nu?'<span class="rb">'+(nu>99?'99+':nu)+'</span>':'')+'</button>'+(ui.bell?bellHtml():'');
   let h='<button type="button" data-a="menu" aria-expanded="'+ui.menu+'"><span class="nm">'+esc(u.name)+'</span>'+av(u.id)+'</button>';
-  if(ui.menu)h+='<div class="menu"><div class="mg">'+(u.admin?'مسؤول النظام · ':'')+(RL[u.role]||'')+'</div><button type="button" data-a="myPw">'+ic('edit')+'تغيير كلمة المرور</button>'+(u.admin||u.role==='member'?'<button type="button" data-a="backup">'+ic('down')+'نسخة احتياطية</button>':'')+(u.admin?'<button type="button" data-a="restore">'+ic('up')+'استيراد نسخة احتياطية</button>'+(SRV.on?'':'<button type="button" data-a="reset">'+ic('reset')+'استعادة البيانات الأولية</button>'):'')+'<hr>'+(isStandalone()?'':'<button type="button" data-a="install">'+ic('down')+'تنزيل التطبيق</button>')+(pushState()==='on'?'':pushState()==='no'?'':'<button type="button" data-a="pushOn">'+ic('alert')+'تفعيل إشعارات الجهاز</button>')+'<hr><button type="button" data-a="logout">'+ic('back')+'تسجيل الخروج</button><div class="note">'+(SRV.on?'البيانات محفوظة على الخادم ومشتركة بين الجميع':'نسخة محلية · البيانات في هذا المتصفح فقط')+'<br>الإصدار 19</div></div>';
+  if(ui.menu)h+='<div class="menu"><div class="mg">'+(u.admin?'مسؤول النظام · ':'')+(RL[u.role]||'')+'</div><button type="button" data-a="myPw">'+ic('edit')+'تغيير كلمة المرور</button>'+(u.admin||u.role==='member'?'<button type="button" data-a="backup">'+ic('down')+'نسخة احتياطية</button>':'')+(u.admin?'<button type="button" data-a="restore">'+ic('up')+'استيراد نسخة احتياطية</button>'+(SRV.on?'':'<button type="button" data-a="reset">'+ic('reset')+'استعادة البيانات الأولية</button>'):'')+'<hr>'+(isStandalone()?'':'<button type="button" data-a="install">'+ic('down')+'تنزيل التطبيق</button>')+(pushState()==='on'?'':pushState()==='no'?'':'<button type="button" data-a="pushOn">'+ic('alert')+'تفعيل إشعارات الجهاز</button>')+'<hr><button type="button" data-a="logout">'+ic('back')+'تسجيل الخروج</button><div class="note">'+(SRV.on?'البيانات محفوظة على الخادم ومشتركة بين الجميع':'نسخة محلية · البيانات في هذا المتصفح فقط')+'<br>الإصدار 20</div></div>';
   $('#uchip').innerHTML=h}
 
 /* auth */
@@ -858,14 +858,14 @@ function decTab(p){const ds=p.requests.filter(r=>r.kind==='dec'),pend=ds.filter(
 function openR(rid){
   const p=proj(ui.pid),r=p&&p.requests.find(x=>x.id===rid);if(!r)return;
   if(r.kind!=='chat'){if(r.kind==='req'&&canTab(p,'exec')){ui.rtOpen[r.id]=true;if(ui.view==='project'&&ui.tab==='exec')render();else go('project',p.id,'exec')}return}
-  if(!$('#pchat')){go('project',p.id,'chat');return}
+  if(ui.view!=='project'){go('project',p.id);setTimeout(()=>openR(rid),0);return}
   const was=r.seen[me().id]||0,unr=runread(r);if(r.seen[me().id]!==r.msgs.length){r.seen[me().id]=r.msgs.length;save()}
   let b='',lastDay='';
   r.msgs.forEach((m,i)=>{const dk=dayKey(m.at);if(dk!==lastDay){b+='<div class="day">'+dayLbl(m.at)+'</div>';lastDay=dk}
     if(unr&&i===was)b+='<div class="unl">رسائل جديدة</div>';
     const mine=m.u===me().id,mu=user(m.u),mg=!!mu&&mu.role==='manager',fresh=Date.now()-m.at<864e5;
     const pm=r.msgs[i-1],showWho=!mine&&(!pm||pm.u!==m.u||dayKey(pm.at)!==dk);
-    const canDel=(mine&&fresh)||cur().admin,canEd=!!m.t&&!r.done&&((mine&&fresh)||cur().admin);const lks=m.likes||[],iL=lks.includes(me().id),canLike=canTab(p,rt(r))&&!isRO();
+    const canDel=(mine&&fresh)||cur().admin,canEd=!!m.t&&(mine||cur().admin);const lks=m.likes||[],iL=lks.includes(me().id),canLike=canTab(p,rt(r))&&!isRO();
     const acts=(canLike?'<button class="like'+(iL?' on':'')+'" type="button" data-a="like" data-i="'+i+'" aria-label="إعجاب" aria-pressed="'+iL+'">'+HEART+'</button>':'')+(canEd?'<button class="bed" type="button" data-a="editMsg" data-id="'+m.id+'" aria-label="تعديل الرسالة" title="تعديل">'+ic('edit')+'</button>':'')+(canDel?'<button class="bdel" type="button" data-a="delMsg" data-i="'+i+'" aria-label="حذف الرسالة" title="حذف">'+ic('trash')+'</button>':'');
     b+='<div class="bub'+(mine?' me':'')+(mg?' mg':'')+(ui.editMsg===m.id?' editing':'')+(showWho?'':' cont')+'">'+(acts?'<span class="bacts">'+acts+'</span>':'')+(showWho?'<span class="who2">'+esc(mu?mu.name:'—')+'<em> · '+roleLbl(mu)+'</em></span>':'')+(m.t?'<p>'+msgHtml(m)+'</p>':'')+(m.files||[]).map(attHtml).join('')+(lks.length?'<span class="rx"><span class="lk" title="'+esc(lks.map(uname).join('، '))+'">'+HEART+lks.length+'</span></span>':'')+'<time>'+(m.ed?'معدّلة · ':'')+hm(m.at)+'</time></div>'});
   if(r.kind==='req'&&r.done)b+='<div class="donebar">'+ic('check')+'أُنجزت كل مهام الملف</div>';
@@ -927,7 +927,7 @@ function projectForm(p){
   const opts=(r,sel,none)=>(none?'<option value="">'+none+'</option>':'')+data.users.filter(u=>u.role===r).map(u=>'<option value="'+u.id+'"'+(sel===u.id?' selected':'')+'>'+esc(u.name)+'</option>').join('');
   modal({title:p?'تعديل المشروع':'مشروع جديد',submit:p?'حفظ':'إنشاء',
     body:'<div class="f"><label for="pn">اسم المشروع</label><input class="fi" id="pn" name="name" value="'+esc(p?p.name:'')+'" data-req></div>'+
-      '<div class="f"><label for="pcat">التصنيف</label><select id="pcat" name="cat">'+PCATS.map(c=>'<option value="'+c[0]+'"'+((p?pCat(p):'study')===c[0]?' selected':'')+'>'+c[1]+'</option>').join('')+'</select></div>'+
+      '<div class="f"><label for="pcat">التصنيف</label><select id="pcat" name="cat">'+PCATS.map(c=>'<option value="'+c[0]+'"'+((p?pCat(p):'comm')===c[0]?' selected':'')+'>'+c[1]+'</option>').join('')+'</select></div>'+
       '<div class="f"><span class="lb">الصورة</span><div class="drop"><span id="pv">'+prev()+'</span><span class="tx"><b>اختر صورة</b>أو اسحبها هنا</span><input type="file" id="pi" accept="image/*" aria-label="صورة المشروع"></div></div>'+
       '<div class="two"><div class="f"><label for="pm">العضو المسؤول</label><select id="pm" name="memberId">'+opts('member',p?p.memberId:me().id)+'</select></div><div class="f"><label for="pe">المدير التنفيذي</label><select id="pe" name="managerId">'+opts('manager',p?p.managerId:'','لم يُحدَّد')+'</select></div></div>'+
       (data.users.some(u=>u.role==='staff')?'<div class="f"><span class="lb">الأعضاء التنفيذيون</span><div class="stfs">'+data.users.filter(u=>u.role==='staff').map(u=>'<label class="ivp"><input type="checkbox" name="staff" value="'+u.id+'"'+(p&&(p.staffIds||[]).includes(u.id)?' checked':'')+'>'+av(u.id,'sm')+esc(u.name)+'</label>').join('')+'</div><span class="help">يعملون في الإدارة التنفيذية لهذا المشروع كالمدير التنفيذي، دون طلب قرارات.</span></div>':''),
@@ -936,7 +936,7 @@ function projectForm(p){
       const dp=f.querySelector('#dp');if(dp)dp.onclick=()=>confirmBox('حذف المشروع','سيُحذف «'+p.name+'» بكل محتواه.','حذف',()=>{data.projects=data.projects.filter(x=>x!==p);save();go('home')})},
     onSubmit:(v,f)=>{const stf=[...f.querySelectorAll('[name=staff]:checked')].map(x=>x.value);
       if(p){const o={name:p.name,img:p.img,memberId:p.memberId,managerId:p.managerId,staffIds:p.staffIds};if(J(stf)!==J(p.staffIds||[])){p.staffIds=stf;touch(p,'exec')}const mg=v.managerId||null;if(mg!==p.managerId)touch(p,'exec');if(v.cat&&v.cat!==pCat(p)){p.cat=v.cat;toast('«'+v.name+'» ← '+PCATS.find(c=>c[0]===v.cat)[1])}Object.assign(p,{name:v.name,img,memberId:v.memberId,managerId:mg});if(!save()){Object.assign(p,o);return false}render()}
-      else{const np={id:uid('p'),cat:v.cat||'study',links:[],name:v.name,img,memberId:v.memberId,managerId:v.managerId||null,staffIds:stf,access:{plan:false,found:false},sections:SECS.map(t=>({id:uid('s'),title:t[0],fmt:t[1],body:''})),steps:[],requests:[]};data.projects.unshift(np);
+      else{const np={id:uid('p'),cat:v.cat||'comm',links:[],name:v.name,img,memberId:v.memberId,managerId:v.managerId||null,staffIds:stf,access:{plan:false,found:false},sections:SECS.map(t=>({id:uid('s'),title:t[0],fmt:t[1],body:''})),steps:[],requests:[]};data.projects.unshift(np);
         if(!save()){data.projects.shift();return false}go('project',np.id,'plan')}}})}
 function reqForm(kind){const p=proj(ui.pid),dec=kind==='dec';
   modal({title:dec?'بحاجة لقرار':'ملف جديد',submit:'إرسال',
@@ -1530,7 +1530,7 @@ Object.assign(A,{bdAuto:()=>{const p=proj(ui.pid);confirmBox('ترتيب تلق�
 
 /* ===================== الإصدار 16: تصنيف المشاريع وترتيبها · التقارير · آخر ظهور · اجتماعات المشاريع ===================== */
 const PCATS=[['run','مشاريع قيد التنفيذ','يُعمل عليها حالياً'],['prep','مشاريع قيد التحضير','لم تنطلق بعد']];
-const pCat=p=>['exec','comm','study','arch'].includes(p.cat)?p.cat:p.cat==='prep'?'study':(p.managerId||(p.staffIds||[]).length?'exec':'comm');
+const pCat=p=>['exec','comm','arch'].includes(p.cat)?p.cat:(p.cat==='prep'||p.cat==='study')?'arch':(p.managerId||(p.staffIds||[]).length?'exec':'comm');
 const canArrange=()=>!!cur()&&(isM()||cur().admin);
 function orderedProjects(list){const ix=new Map(data.projects.map((p,i)=>[p.id,i]));const k=p=>p.ord!=null?p.ord:1e5+ix.get(p.id);return list.slice().sort((a,b)=>k(a)-k(b))}
 function projGroups(list){return PCATS.map(c=>({c,ps:orderedProjects(list.filter(p=>pCat(p)===c[0]))}))}
@@ -1648,7 +1648,7 @@ const growAll=()=>document.querySelectorAll('textarea[data-grow]').forEach(growT
 const WBC={y:'#FFF0A6',o:'#FFDDB8',p:'#FFD3DE',v:'#E4D8FF',b:'#CDE5FF',g:'#D2F0D4'};
 const WINK=['#3A342B','#C62828','#1E5BB8','#1B7A43','#C4510F','#6B3FB0'];
 const wbEd=()=>!!cur()&&(isM()||cur().admin);
-const isBoxW=i=>i&&(i.t==='note'||i.t==='text'||i.t==='frame');
+const isBoxW=i=>i&&(i.t==='note'||i.t==='text'||i.t==='frame'||i.t==='shape');
 const isLineW=i=>i&&(i.t==='arrow'||i.t==='line');
 function wbItems(p){if(!Array.isArray(p.wb))p.wb=wbConvert(p);return p.wb}
 function wbConvert(p){const st=p.stages||[];if(!st.length)return [];const pos=boardPos(p);let mx=0;st.forEach(s=>{const q=pos[s.id];if(q)mx=Math.max(mx,q.x)});
@@ -1666,11 +1666,11 @@ function wbView(p){const ed=wbEd(),its=wbItems(p),t=ui.wbt||'sel';
   const tb=(k,ico,lb,key)=>'<button type="button" class="wtb'+(t===k?' on':'')+'" data-wbt="'+k+'" title="'+lb+' ('+key+')" aria-label="'+lb+'" aria-pressed="'+(t===k)+'">'+ico+'</button>';
   const ad=(k,ico,lb,key)=>'<button type="button" class="wtb" data-wbadd="'+k+'" title="'+lb+' ('+key+')" aria-label="'+lb+'">'+ico+'</button>';
   const tools=ed?'<div class="wb-tools" role="toolbar" aria-label="أدوات اللوحة">'+tb('sel',S('<path d="M5 3l14 8-6 2-2 6z"/>'),'تحديد وتحريك','V')+'<span class="wsep"></span>'+
-    ad('note',S('<path d="M4 4h16v11l-5 5H4z"/><path d="M15 20v-5h5"/>'),'ستيكي نوت','N')+ad('text',S('<path d="M5 6V4h14v2M12 4v16M9 20h6"/>'),'نص أو عنوان','T')+ad('frame',S('<rect x="3" y="5" width="18" height="15" rx="1.5" stroke-dasharray="3 2.5"/><path d="M3 9h7"/>'),'إطار لتجميع الأفكار','F')+'<span class="wsep"></span>'+
+    tb('note',S('<path d="M4 4h16v11l-5 5H4z"/><path d="M15 20v-5h5"/>'),'ستيكي نوت: ارسمه بالسحب','N')+ad('text',S('<path d="M5 6V4h14v2M12 4v16M9 20h6"/>'),'نص أو عنوان','T')+tb('frame',S('<rect x="3" y="5" width="18" height="15" rx="1.5" stroke-dasharray="3 2.5"/><path d="M3 9h7"/>'),'إطار لتجميع الأفكار','F')+'<span class="wsep"></span>'+tb('rect',S('<rect x="3" y="6" width="18" height="12" rx="2"/>'),'مستطيل','R')+tb('ell',S('<ellipse cx="12" cy="12" rx="9" ry="7"/>'),'دائرة','O')+tb('dia',S('<path d="M12 3l9 9-9 9-9-9z"/>'),'معيّن','D')+'<span class="wsep"></span>'+
     tb('arrow',S('<path d="M4 20L20 4M11 4h9v9"/>'),'سهم: اسحب من نقطة إلى نقطة أو من عنصر إلى عنصر','A')+tb('line',S('<path d="M4 20L20 4"/>'),'خط مستقيم','L')+tb('pen',S('<path d="M4 20c4-1 6-9 9-12s6-3 7-2-1 4-4 6-9 4-12 8"/>'),'قلم رسم حر','P')+
     '<span class="wsep"></span><button type="button" class="wtb" data-wbundo title="تراجع (Ctrl+Z)" aria-label="تراجع">'+S('<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>')+'</button><button type="button" class="wtb" data-wbredo title="إعادة (Ctrl+Y)" aria-label="إعادة">'+S('<path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/>')+'</button></div>':'';
   const zoom='<div class="wb-zoom"><button type="button" class="wtb" data-wbz="out" aria-label="تصغير">−</button><span id="wbzv">100%</span><button type="button" class="wtb" data-wbz="in" aria-label="تكبير">+</button><button type="button" class="wtb" data-wbz="fit" title="عرض كل اللوحة" aria-label="عرض كل اللوحة"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button><button type="button" class="wtb" data-wbz="full" title="ملء الشاشة" aria-label="ملء الشاشة"><svg viewBox="0 0 24 24"><path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5"/></svg></button></div>';
-  const hint=!its.length?'<div class="wb-empty">'+(ed?'<b>لوحة التخطيط</b><span>نقاط اللجنة المهمة والعاجلة للإدارة التنفيذية: أضف ستيكي نوت من الشريط أو بنقرتين على اللوحة. تكتب الإدارة التنفيذية آخر المستجدات على كل نوت وتعلّمها عند الإنجاز.</span>':'<b>اللوحة فارغة بعد</b>')+'</div>':'';
+  const hint=!its.length?'<div class="wb-empty">'+(ed?'<b>لوحة التخطيط</b><span>نقاط اللجنة المهمة والعاجلة للإدارة التنفيذية: اختر الستيكي نوت من الشريط وارسمه بالسحب، أو انقر نقرتين على اللوحة. تكتب الإدارة التنفيذية آخر المستجدات على كل نوت وتعلّمها عند الإنجاز.</span>':'<b>اللوحة فارغة بعد</b>')+'</div>':'';
   return '<div class="wb-wrap'+(ed?' ed':'')+(ui.wbFull?' full':'')+'" id="wb"><div class="wb-head">'+tools+'<div class="wb-sel" id="wbsel"></div><span class="sp"></span>'+zoom+'</div><div class="wb-vp tool-'+t+'" id="wbvp" tabindex="0" aria-label="لوحة التخطيط">'+hint+'<div class="wb-world" id="wbw"></div></div>'+(ed?'<div class="wb-keys">اختصارات: Ctrl+C نسخ · Ctrl+V لصق · Ctrl+D تكرار · Ctrl+Z تراجع · Delete حذف · الأسهم للتحريك · Enter للكتابة</div>':'')+'</div>'}
 function wbRect(p,id){const it=wbFind(p,id);if(!it||!isBoxW(it)||it.fin)return null;const el=$('#wbw [data-wid="'+id+'"]');return {x:it.x,y:it.y,w:el?el.offsetWidth:it.w||160,h:el?el.offsetHeight:it.h||60}}
 function wbEdge(r,tx,ty){const cx=r.x+r.w/2,cy=r.y+r.h/2,dx=tx-cx,dy=ty-cy;if(!dx&&!dy)return {x:cx,y:cy};const sx=Math.abs(dx)/(r.w/2+6),sy=Math.abs(dy)/(r.h/2+6),s=Math.max(sx,sy);return {x:cx+dx/s,y:cy+dy/s}}
@@ -1720,7 +1720,7 @@ function wbAdd(p,t,at){const c=at||wbCenter(p),its=wbItems(p),n=its.filter(i=>i.
 function wbEditText(p,id){const el=$('#wbw [data-wid="'+id+'"] .wb-t'),it=wbFind(p,id);if(!el||!it||!isBoxW(it))return;ui.wbBusy=true;const before=JSON.stringify(wbItems(p));el.contentEditable='true';el.classList.add('editing');el.focus();
   const r=document.createRange();r.selectNodeContents(el);r.collapse(false);const s=getSelection();s.removeAllRanges();s.addRange(r);
   const fin=()=>{el.removeEventListener('blur',fin);el.contentEditable='false';el.classList.remove('editing');ui.wbBusy=false;const tx=el.innerText.replace(/\n{3,}/g,'\n\n').trim();
-    if(!tx&&it.t!=='frame'){p.wb=wbItems(p).filter(x=>x!==it&&!(isLineW(x)&&(x.a===id||x.b===id)));ui.wbSel=null;wbSave(p);wbDraw();return}
+    if(!tx&&it.t==='text'){p.wb=wbItems(p).filter(x=>x!==it&&!(isLineW(x)&&(x.a===id||x.b===id)));ui.wbSel=null;wbSave(p);wbDraw();return}
     if(tx!==(it.txt||'')){ui.wbU=ui.wbU||{};(ui.wbU[p.id]=ui.wbU[p.id]||[]).push(before);it.txt=tx;wbSave(p,it)}wbLines();const vp=$('#wbvp');if(vp)vp.focus({preventScroll:true})};
   el.addEventListener('blur',fin);el.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();el.blur()}e.stopPropagation()});el.addEventListener('input',()=>{if(it.t==='note'){const box=el.parentElement,ft=box.querySelector('.wn-f'),need=el.offsetHeight+38+(ft?ft.offsetHeight+6:0);if(need>box.clientHeight){it.h=need;box.style.height=need+'px'}}wbLines()})}
 /* الحافظة: نسخ/قص/لصق/تكرار (مع الأسهم المرتبطة بين العناصر المنسوخة) */
@@ -1750,7 +1750,7 @@ function wbInit(){const vp=$('#wbvp'),p=proj(ui.pid);if(!vp||!p||vp._init)return
     if(pts.size===2){const [a,b]=[...pts.values()],v=wbV(p);pinch={d:Math.hypot(a.x-b.x,a.y-b.y),z:v.z,x:v.x,y:v.y,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2};return}
     const ed=wbEd(),t=ui.wbt||'sel',el=e.target.closest('[data-wid]'),q0=W(e),x0=e.clientX,y0=e.clientY,v=wbV(p);let moved=false,act=null;
     const box=el&&el.classList.contains('wbi')?el:null;
-    if(ed&&t==='pen')act={k:'pen',s:{id:uid('w'),t:'pen',pts:[[Math.round(q0.x),Math.round(q0.y)]],c:ui.wbInk||WINK[0]}};
+    if(ed&&MKT.includes(t))act={k:'mk',kind:t};else if(ed&&t==='pen')act={k:'pen',s:{id:uid('w'),t:'pen',pts:[[Math.round(q0.x),Math.round(q0.y)]],c:ui.wbInk||WINK[0]}};
     else if(ed&&(t==='arrow'||t==='line')){const pend=ui.wbPend;act={k:'line',kind:t,a:box&&!box.classList.contains('wf')?box.dataset.wid:null,p:{x:Math.round(q0.x),y:Math.round(q0.y)},pend}}
     else if(ed&&e.target.closest('[data-end]')){const it=wbFind(p,el.dataset.wid);act={k:'end',it,end:e.target.closest('[data-end]').dataset.end,before:JSON.stringify(wbItems(p))}}
     else if(ed&&box&&e.target.closest('[data-h]')){const it=wbFind(p,box.dataset.wid);act={k:'rs',it,h:e.target.closest('[data-h]').dataset.h,o:{x:it.x,y:it.y,w:box.offsetWidth,h:box.offsetHeight},before:JSON.stringify(wbItems(p))}}
@@ -1762,7 +1762,7 @@ function wbInit(){const vp=$('#wbvp'),p=proj(ui.pid);if(!vp||!p||vp._init)return
       if(pinch&&pts.size>=2){const [a,b]=[...pts.values()],r=vp.getBoundingClientRect(),d=Math.hypot(a.x-b.x,a.y-b.y),nz=Math.max(.2,Math.min(2.5,pinch.z*d/pinch.d)),cx=pinch.cx-r.left,cy=pinch.cy-r.top,mx=(a.x+b.x)/2-r.left,my=(a.y+b.y)/2-r.top;
         v.z=nz;v.x=mx-(cx-pinch.x)*nz/pinch.z;v.y=my-(cy-pinch.y)*nz/pinch.z;wbApply();return}
       if(ev.pointerId!==e.pointerId)return;const dx=ev.clientX-x0,dy=ev.clientY-y0;if(!moved&&Math.hypot(dx,dy)<4)return;moved=true;const q=W(ev);
-      if(act.k==='pan'){v.x=act.vx+dx;v.y=act.vy+dy;wbApply()}
+      if(act.k==='mk'){wbGhost(q0,q)}else if(act.k==='pan'){v.x=act.vx+dx;v.y=act.vy+dy;wbApply()}
       else if(act.k==='move'){act.grp.forEach(g=>wbMoveBy(g.x,dx/v.z,dy/v.z,g.o));wbLines()}
       else if(act.k==='rs'){const it=act.it,o=act.o,h=act.h,ddx=dx/v.z,ddy=dy/v.z,mw=it.t==='frame'?160:it.t==='text'?60:100,mh=it.t==='frame'?100:70;let x=o.x,y=o.y,w=o.w,hh=o.h;
         if(h.includes('e'))w=Math.max(mw,o.w+ddx);if(h.includes('w')){w=Math.max(mw,o.w-ddx);x=o.x+o.w-w}if(h.includes('s'))hh=Math.max(mh,o.h+ddy);if(h.includes('n')){hh=Math.max(mh,o.h-ddy);y=o.y+o.h-hh}
@@ -1774,7 +1774,7 @@ function wbInit(){const vp=$('#wbvp'),p=proj(ui.pid);if(!vp||!p||vp._init)return
     const up=ev=>{pts.delete(ev.pointerId);if(pts.size<2)pinch=null;if(ev.pointerId!==e.pointerId)return;vp.removeEventListener('pointermove',mv);vp.removeEventListener('pointerup',up);vp.removeEventListener('pointercancel',up);ui.dragging=false;
       const pushU=b=>{ui.wbU=ui.wbU||{};(ui.wbU[p.id]=ui.wbU[p.id]||[]).push(b);ui.wbR=ui.wbR||{};ui.wbR[p.id]=[]};
       $('#wbw').querySelectorAll('.tgt').forEach(n=>n.classList.remove('tgt'));const tp=$('#wbtmp');if(tp)tp.setAttribute('d','');
-      if((act.k==='move'||act.k==='rs')&&moved){pushU(act.before);wbSave(p,act.it)}
+      if(act.k==='mk'){wbGhost(null);wbMake(p,act.kind,q0,W(ev),moved)}else if((act.k==='move'||act.k==='rs')&&moved){pushU(act.before);wbSave(p,act.it)}
       else if(act.k==='pen'){if(act.s.pts.length>1){wbSnap(p);wbItems(p).push(act.s);wbSave(p,act.s)}wbLines()}
       else if(act.k==='end'&&moved){const q=W(ev),tn=wbHit(ev),it=act.it,k=act.end==='1'?'a':'b',other=act.end==='1'?it.b:it.a;
         if(tn&&!tn.classList.contains('wf')&&tn.dataset.wid!==other){it[k]=tn.dataset.wid}else{it[k]=null;it[act.end==='1'?'x1':'x2']=Math.round(q.x);it[act.end==='1'?'y1':'y2']=Math.round(q.y)}pushU(act.before);wbSave(p,it);wbLines()}
@@ -1814,8 +1814,8 @@ document.addEventListener('keydown',e=>{if(!wbFocus()||ui.wbBusy||!wbEd())return
   if(k==='Escape'){wbSelect(null);wbTool('sel');return}
   if(k.startsWith('Arrow')&&it){e.preventDefault();const s=e.shiftKey?10:1,dx=k==='ArrowLeft'?-s:k==='ArrowRight'?s:0,dy=k==='ArrowUp'?-s:k==='ArrowDown'?s:0;if(!ui.wbNudge){wbSnap(p);ui.wbNudge=1}
     const grp=it.t==='frame'?[it].concat(wbFrameGroup(p,it)):[it];grp.forEach(x=>wbMoveBy(x,dx,dy,wbOrig(x)));wbLines();clearTimeout(ui.wbNT);ui.wbNT=setTimeout(()=>{ui.wbNudge=0;wbSave(p,it)},500);return}
-  if(!c&&!e.altKey){const m={v:'sel',a:'arrow',l:'line',p:'pen'}[lk]||{KeyV:'sel',KeyA:'arrow',KeyL:'line',KeyP:'pen'}[code];if(m){wbTool(m);return}
-    const ad={n:'note',t:'text',f:'frame'}[lk]||{KeyN:'note',KeyT:'text',KeyF:'frame'}[code];if(ad){e.preventDefault();wbAdd(p,ad,ui.wbPtr&&ui.wbHover?ui.wbPtr:null)}}});
+  if(!c&&!e.altKey){const m={v:'sel',a:'arrow',l:'line',p:'pen',n:'note',f:'frame',r:'rect',o:'ell',d:'dia'}[lk]||{KeyV:'sel',KeyA:'arrow',KeyL:'line',KeyP:'pen',KeyN:'note',KeyF:'frame',KeyR:'rect',KeyO:'ell',KeyD:'dia'}[code];if(m){wbTool(m);return}
+    const ad={t:'text'}[lk]||{KeyT:'text'}[code];if(ad){e.preventDefault();wbAdd(p,ad,ui.wbPtr&&ui.wbHover?ui.wbPtr:null)}}});
 /* لصق نص من خارج اللوحة: يصير ستيكي نوت */
 document.addEventListener('paste',e=>{if(!wbFocus()||ui.wbBusy||!wbEd())return;const p=proj(ui.pid);if(!p)return;if(ui.wbPasteKey&&Date.now()-ui.wbPasteKey<500)return;
   const tx=(e.clipboardData&&e.clipboardData.getData('text/plain')||'').trim();if(!tx)return;e.preventDefault();
@@ -1864,6 +1864,7 @@ function renderProject(){
   h+='<div class="tabs"><div class="tabs-in" role="tablist">'+ts.map(t=>{const b=t[0]===ui.tab?0:t[0]==='chat'?runread(cr):badge(p,t[0]);
     return '<button type="button" role="tab" class="tab'+(ui.tab===t[0]?' on':'')+'" aria-selected="'+(ui.tab===t[0])+'" data-a="tab" data-t="'+t[0]+'">'+t[1]+(b?'<span class="rb">'+b+'</span>':'')+'</button>'}).join('')+'</div></div>';
   h+='<div class="in">'+(ui.tab==='plan'?planTab(p):ui.tab==='found'?foundTab(p):ui.tab==='links'?linksTab(p):ui.tab==='chat'?'<div class="pchat" id="pchat"></div>':execTab(p))+'</div>';
+  if(canTab(p,'chat')){const n=runread(cr);h+='<button type="button" class="pchat-fab'+(n?' un':'')+'" data-a="pchatOpen" aria-label="محادثة المشروع">'+ic('chat')+'<span>محادثة المشروع</span>'+(n?'<span class="rb">'+n+'</span>':'')+'</button>'}
   $('#view').innerHTML='<div class="wrap'+(ui.tab==='found'?' wide':'')+'">'+h+'</div>';
   if($('#pchat')){ui.pcFoc=wasFoc;openR(cr.id);ui.pcFoc=false;const tx=$('#pchat #ctx');if(tx&&!ui.editMsg&&ui.pcDraft){tx.value=ui.pcDraft;growTx(tx)}if(tx&&wasFoc){tx.focus();tx.setSelectionRange(tx.value.length,tx.value.length)}
     const cb=$('#pchat #cb');if(cb&&oScroll&&!oScroll.bottom)cb.scrollTop=oScroll.t}
@@ -1904,25 +1905,26 @@ function hrKids(xs,id){return xs.filter(x=>x.parent===id)}
 function hrRoots(xs){return xs.filter(x=>!x.parent||!xs.some(y=>y.id===x.parent))}
 function hrOrder(xs){const out=[],seen=new Set();const walk=(x,d)=>{if(seen.has(x.id))return;seen.add(x.id);out.push({x,d});hrKids(xs,x.id).forEach(c=>walk(c,d+1))};hrRoots(xs).forEach(x=>walk(x,0));xs.forEach(x=>{if(!seen.has(x.id))walk(x,0)});return out}
 function hrTotals(xs){const f=xs.filter(x=>!x.vacant),v=xs.filter(x=>x.vacant);return {n:xs.length,f:f.length,v:v.length,sf:f.reduce((a,x)=>a+(x.salary||0),0),sv:v.reduce((a,x)=>a+(x.salary||0),0)}}
-function hrView(p){const xs=hrList(p),ed=canHR(),s=HSUB.some(x=>x[0]===ui.hsub)?ui.hsub:'org',T=hrTotals(xs),tOnly=prefs.hrMode==='t';
+function hrView(p){const SV=canSal(p),xs=hrList(p),ed=canHR(),s=HSUB.some(x=>x[0]===ui.hsub)?ui.hsub:'org',T=hrTotals(xs),tOnly=prefs.hrMode==='t';
   let h='<div class="lsecs" role="tablist">'+HSUB.map(x=>'<button type="button" role="tab" class="'+(s===x[0]?'on':'')+'" aria-selected="'+(s===x[0])+'" data-a="hsub" data-v="'+x[0]+'">'+x[1]+(x[0]==='org'?'<span class="n">'+xs.length+'</span>':'')+'</button>').join('')+'</div>';
   h+='<div class="bar-h"><h2>'+({org:'الهيكلية التنظيمية',pay:'جدول الرواتب',st:'إحصائيات الموارد البشرية'}[s])+'</h2><span class="sp"></span>'+(s==='org'&&xs.length?'<div class="seg" role="group" aria-label="طريقة العرض"><button type="button" data-a="hrMode" data-v="d" class="'+(tOnly?'':'on')+'">التفاصيل</button><button type="button" data-a="hrMode" data-v="t" class="'+(tOnly?'on':'')+'">المسميات فقط</button></div>':'')+(ed?'<button class="btn sm primary" type="button" data-a="hrNew">'+ic('plus')+'وظيفة</button>':'')+'</div>';
   if(!xs.length)return h+'<div class="empty"><span class="e">'+ic('flow')+'</span><b>لا وظائف بعد</b><span>'+(ed?'ابدأ بالمدير التنفيذي، ثم أضف الوظائف التابعة له لتُرسم الهيكلية تلقائياً':'تُضاف الهيكلية من قسم الموارد البشرية')+'</span></div>';
   if(s==='org'){const node=(x,depth,seen)=>{if(seen.has(x.id))return '';seen.add(x.id);const ks=hrKids(xs,x.id);
-      const box='<button type="button" class="hn'+(x.vacant?' vac':'')+(tOnly?' t':'')+'" data-a="hrOpen" data-id="'+x.id+'"><b>'+esc(x.title)+'</b>'+(tOnly?(x.vacant?'<i class="hv-dot" title="شاغر"></i>':''):'<span class="hn-n">'+(x.vacant?'<em>شاغر</em>':esc(x.name||'—'))+'</span>'+(x.salary?'<small>'+usd(x.salary)+' / شهرياً</small>':''))+'</button>';
+      const box='<button type="button" class="hn'+(x.vacant?' vac':'')+(tOnly?' t':'')+'" data-a="hrOpen" data-id="'+x.id+'"><b>'+esc(x.title)+'</b>'+(tOnly?(x.vacant?'<i class="hv-dot" title="شاغر"></i>':''):'<span class="hn-n">'+(x.vacant?'<em>شاغر</em>':esc(x.name||'—'))+'</span>'+(x.salary&&SV?'<small>'+usd(x.salary)+' / شهرياً</small>':''))+'</button>';
       return '<li>'+box+(ks.length?'<ul>'+ks.map(c=>node(c,depth+1,seen)).join('')+'</ul>':'')+'</li>'};
     const seen=new Set();return h+'<div class="orgw"><ul class="org">'+hrRoots(xs).map(x=>node(x,0,seen)).join('')+'</ul></div><p class="note-s hr-leg">'+T.n+' وظيفة · '+T.f+' مشغولة · '+T.v+' شاغرة'+(tOnly?' · اضغط على أي مسمى لعرض تفاصيله':'')+'</p>'}
+  if(s==='pay'&&!SV)return h+'<div class="empty"><span class="e">'+ic('alert')+'</span><b>الرواتب غير متاحة لحسابك</b><span>تظهر للجنة والمالية والموارد البشرية ومدير المشروع فقط</span></div>';
   if(s==='pay'){const rows=hrOrder(xs);
     return h+'<div class="tbw"><table class="dtab"><thead><tr><th>#</th><th>المسمى الوظيفي</th><th>الاسم</th><th>يتبع لـ</th><th class="nm">الراتب الشهري</th></tr></thead><tbody>'+rows.map(({x,d},i)=>{const pr=xs.find(y=>y.id===x.parent);
       return '<tr class="'+(x.vacant?'vac':'')+'" data-a="hrOpen" data-id="'+x.id+'"><td class="nm">'+(i+1)+'</td><td><span style="padding-inline-start:'+(d*14)+'px">'+(d?'<i class="lvl">↳</i>':'')+esc(x.title)+'</span></td><td>'+(x.vacant?'<em class="vtag">شاغر</em>':esc(x.name||'—'))+'</td><td>'+(pr?esc(pr.title):'—')+'</td><td class="nm">'+(x.salary?usd(x.salary):'—')+'</td></tr>'}).join('')+'</tbody><tfoot><tr><td></td><td colspan="3">مجموع رواتب الوظائف المشغولة</td><td class="nm"><b>'+usd(T.sf)+'</b></td></tr>'+(T.sv?'<tr class="vac"><td></td><td colspan="3">رواتب الشواغر المقدّرة</td><td class="nm">'+usd(T.sv)+'</td></tr><tr><td></td><td colspan="3">الإجمالي عند اكتمال الشواغر</td><td class="nm"><b>'+usd(T.sf+T.sv)+'</b></td></tr>':'')+'</tfoot></table></div>'}
   const paid=xs.filter(x=>!x.vacant&&x.salary),avg=paid.length?T.sf/paid.length:0,mx=paid.reduce((a,x)=>Math.max(a,x.salary),0);
-  h+='<div class="kpis"><div class="kp"><b>'+T.n+'</b><small>وظيفة في الهيكلية</small></div><div class="kp d"><b>'+T.f+'</b><small>مشغولة</small></div><div class="kp'+(T.v?' l':'')+'"><b>'+T.v+'</b><small>شاغرة</small></div><div class="kp b"><b>'+usd(T.sf)+'</b><small>رواتب شهرية</small></div></div>';
-  h+='<div class="kpis k3" style="margin-top:12px"><div class="kp"><b>'+usd(Math.round(avg))+'</b><small>متوسط الراتب</small></div><div class="kp"><b>'+usd(mx)+'</b><small>أعلى راتب</small></div><div class="kp"><b>'+usd(T.sf*12)+'</b><small>تكلفة سنوية تقديرية</small></div></div>';
+  h+='<div class="kpis"><div class="kp"><b>'+T.n+'</b><small>وظيفة في الهيكلية</small></div><div class="kp d"><b>'+T.f+'</b><small>مشغولة</small></div><div class="kp'+(T.v?' l':'')+'"><b>'+T.v+'</b><small>شاغرة</small></div>'+(SV?'<div class="kp b"><b>'+usd(T.sf)+'</b><small>رواتب شهرية</small></div>':'')+'</div>';
+  if(SV)h+='<div class="kpis k3" style="margin-top:12px"><div class="kp"><b>'+usd(Math.round(avg))+'</b><small>متوسط الراتب</small></div><div class="kp"><b>'+usd(mx)+'</b><small>أعلى راتب</small></div><div class="kp"><b>'+usd(T.sf*12)+'</b><small>تكلفة سنوية تقديرية</small></div></div>';
   /* التوزيع حسب الفروع: كل فرع تحت الرأس مع من يتبع له */
   const roots=hrRoots(xs),br=(roots.length===1?hrKids(xs,roots[0].id):roots);
   if(br.length>1||(br.length===1&&roots.length===1)){const sub=x=>{const out=[x],st=[x];const seen=new Set([x.id]);while(st.length){const c=st.pop();hrKids(xs,c.id).forEach(k=>{if(!seen.has(k.id)){seen.add(k.id);out.push(k);st.push(k)}})}return out};
     const rs=br.map(b=>{const g=sub(b);return {t:b.title,n:g.length,s:g.filter(x=>!x.vacant).reduce((a,x)=>a+(x.salary||0),0),v:g.filter(x=>x.vacant).length}}),ms=Math.max(1,...rs.map(r=>r.s));
-    h+='<div class="bar-h" style="margin-top:22px"><h2>حسب الفروع</h2></div><div class="dist">'+rs.map(r=>'<div class="dr"><span class="dr-t"><b>'+esc(r.t)+'</b><small>'+r.n+' وظيفة'+(r.v?' · '+r.v+' شاغرة':'')+'</small></span><span class="dr-b"><i style="width:'+(r.s/ms*100)+'%"></i></span><span class="dr-v">'+usd(r.s)+'</span></div>').join('')+'</div>'}
+    h+='<div class="bar-h" style="margin-top:22px"><h2>حسب الفروع</h2></div><div class="dist">'+rs.map(r=>'<div class="dr"><span class="dr-t"><b>'+esc(r.t)+'</b><small>'+r.n+' وظيفة'+(r.v?' · '+r.v+' شاغرة':'')+'</small></span><span class="dr-b"><i style="width:'+(SV?r.s/ms*100:r.n/Math.max(...rs.map(q=>q.n))*100)+'%"></i></span><span class="dr-v">'+(SV?usd(r.s):r.n)+'</span></div>').join('')+'</div>'}
   return h}
 function hrDesc(xs,id){const out=new Set([id]);let ch=true;while(ch){ch=false;xs.forEach(x=>{if(x.parent&&out.has(x.parent)&&!out.has(x.id)){out.add(x.id);ch=true}})}return out}
 function hrForm(p,x,parent){const xs=hrList(p),bad=x?hrDesc(xs,x.id):new Set(),pv=x?x.parent||'':parent||'';
@@ -1937,7 +1939,7 @@ function hrForm(p,x,parent){const xs=hrList(p),bad=x?hrDesc(xs,x.id):new Set(),p
       if(x)Object.assign(x,o);else xs.push(Object.assign({id:uid('h')},o));touch(p,'plan');setSeen(p.id,'plan');save();setTimeout(render,0)}})}
 function hrOpen(p,id){const xs=hrList(p),x=xs.find(y=>y.id===id);if(!x)return;const ed=canHR(),pr=xs.find(y=>y.id===x.parent),ks=hrKids(xs,x.id);
   modal({title:x.title,submit:ed?'تعديل':'إغلاق',
-    body:'<div class="hrd"><div><span>الاسم</span><b>'+(x.vacant?'<em class="vtag">شاغر</em>':esc(x.name||'—'))+'</b></div><div><span>الراتب الشهري</span><b class="ltr">'+(x.salary?usd(x.salary):'—')+'</b></div><div><span>يتبع لـ</span><b>'+(pr?esc(pr.title)+(pr.name&&!pr.vacant?' · '+esc(pr.name):''):'رأس الهيكلية')+'</b></div><div><span>يتبع له</span><b>'+(ks.length?ks.map(k=>esc(k.title)).join('، '):'—')+'</b></div>'+(x.note?'<div class="full"><span>ملاحظة</span><b>'+esc(x.note)+'</b></div>':'')+'</div>'+(x.at?'<p class="note-s">آخر تعديل: '+esc(shortName(x.u))+' · '+when(x.at)+'</p>':''),
+    body:'<div class="hrd"><div><span>الاسم</span><b>'+(x.vacant?'<em class="vtag">شاغر</em>':esc(x.name||'—'))+'</b></div>'+(canSal(p)?'<div><span>الراتب الشهري</span><b class="ltr">'+(x.salary?usd(x.salary):'—')+'</b></div>':'')+'<div><span>يتبع لـ</span><b>'+(pr?esc(pr.title)+(pr.name&&!pr.vacant?' · '+esc(pr.name):''):'رأس الهيكلية')+'</b></div><div><span>يتبع له</span><b>'+(ks.length?ks.map(k=>esc(k.title)).join('، '):'—')+'</b></div>'+(x.note?'<div class="full"><span>ملاحظة</span><b>'+esc(x.note)+'</b></div>':'')+'</div>'+(x.at?'<p class="note-s">آخر تعديل: '+esc(shortName(x.u))+' · '+when(x.at)+'</p>':''),
     extra:ed?'<button class="btn ghost" type="button" id="hsub">'+ic('plus')+'وظيفة تابعة</button><button class="btn danger" type="button" id="hdel">'+ic('trash')+'حذف</button>':'',
     after:f=>{const a=f.querySelector('#hsub'),d=f.querySelector('#hdel');if(a)a.onclick=()=>{closeLayer();hrForm(p,null,x.id)};
       if(d)d.onclick=()=>confirmBox('حذف الوظيفة','ستُحذف «'+x.title+'»'+(ks.length?'، وتنتقل الوظائف التابعة لها ('+ks.length+') إلى '+(pr?'«'+pr.title+'»':'رأس الهيكلية'):'')+'.','حذف',()=>{const i=xs.indexOf(x);ks.forEach(k=>{k.parent=x.parent||null});xs.splice(i,1);touch(p,'plan');save();render();
@@ -2074,6 +2076,129 @@ function inboxHtml(){const xs=inboxList().slice(0,60);
   const un=xs.filter(x=>x.n).length;let h='<div class="bpanel ibx" role="dialog" aria-label="الرسائل"><div class="bp-h"><b>محادثات المشاريع</b>'+(un?'<span class="bp-un">'+un+' غير مقروءة</span>':'')+'<span class="sp"></span><span class="note-s">'+xs.length+' محادثة</span></div>';
   if(!xs.length)return h+'<div class="bp-empty">'+ic('chat')+'<span>لا رسائل بعد. لكل مشروع محادثة واحدة بين اللجنة والإدارة التنفيذية، تجدها في تبويبة «محادثة المشروع».</span></div></div>';
   return h+'<div class="bp-list">'+xs.map(({p,r,lm,n})=>'<button type="button" class="bn ib'+(n?' un':'')+'" data-a="ibOpen" data-p="'+p.id+'" data-r="'+r.id+'">'+av(lm.u,'sm')+'<span class="bn-t"><b>'+esc(p.name)+'</b>'+(n?'<span class="ib-un">غير مقروءة</span>':'')+'<small>'+esc(shortName(lm.u))+': '+esc(lm.t||((lm.files||[]).length?'📎 '+lm.files[0].name:''))+'</small><i>'+when(lm.at)+'</i></span>'+(n?'<span class="ib-n">'+n+'</span>':'')+'</button>').join('')+'</div></div>'}
+
+/* ===================== الإصدار 20: الميزانية الجديدة · رسم النوت والأشكال · ردّ من كل طرف · زر المحادثة · لا «قيد الدراسة» ===================== */
+TABS.splice(TABS.findIndex(t=>t[0]==='chat'),1);
+PCATS.splice(PCATS.findIndex(c=>c[0]==='study'),1);
+/* الرواتب: للجنة والمالية والموارد البشرية ومدير المشروع (إذا أُعطي البطاقة) فقط */
+const canSal=p=>!!cur()&&(isCom(cur())||['hr','fin'].includes(me().role)||(!!p&&p.managerId===me().id));
+Object.assign(A,{
+  pchatOpen:()=>{const p=proj(ui.pid);if(p&&canTab(p,'chat'))openR(chatReq(p).id)},
+  ibOpen:d=>{ui.ibx=false;const p=proj(d.p);if(!p)return;go('project',p.id);setTimeout(()=>openR(chatReq(p).id),0)}
+});
+RO_OK.push('pchatOpen','budSub','budYr');
+
+/* ---------- لوحة التخطيط: رسم النوت والأشكال بالسحب ---------- */
+const MKT=['note','frame','rect','ell','dia'];
+const SHP={rect:'<rect x="1.5" y="1.5" width="97" height="97" rx="7"/>',ell:'<ellipse cx="50" cy="50" rx="48.5" ry="48.5"/>',dia:'<polygon points="50,1.5 98.5,50 50,98.5 1.5,50"/>'};
+const SHC={y:'#FFF0A6',o:'#FFDDB8',p:'#FFD3DE',v:'#E4D8FF',b:'#CDE5FF',g:'#D2F0D4',w:'#FFFFFF'};
+function wbGhost(a,b){const w=$('#wbw');if(!w)return;let g=$('#wbghost');if(!a){if(g)g.remove();return}if(!g){g=document.createElement('div');g.id='wbghost';g.className='wb-ghost';w.appendChild(g)}
+  const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y);Object.assign(g.style,{left:x+'px',top:y+'px',width:Math.abs(b.x-a.x)+'px',height:Math.abs(b.y-a.y)+'px'});g.className='wb-ghost k-'+(ui.wbt||'')}
+function wbMake(p,kind,a,b,moved){const D0={note:[200,130],frame:[440,300],rect:[170,100],ell:[160,110],dia:[170,130]}[kind],big=moved&&Math.abs(b.x-a.x)>14&&Math.abs(b.y-a.y)>14;
+  const x=big?Math.min(a.x,b.x):a.x-D0[0]/2,y=big?Math.min(a.y,b.y):a.y-D0[1]/2,w=big?Math.max(kind==='frame'?160:70,Math.abs(b.x-a.x)):D0[0],h=big?Math.max(kind==='frame'?100:50,Math.abs(b.y-a.y)):D0[1],id=uid('w');
+  const it=Object.assign({id,x:Math.round(x),y:Math.round(y),w:Math.round(w),h:Math.round(h),txt:kind==='frame'?'إطار':''},kind==='note'?{t:'note',c:ui.wbLastC||'y'}:kind==='frame'?{t:'frame'}:{t:'shape',sh:kind,c:ui.wbShC||'b'});
+  wbSnap(p);if(kind==='frame')wbItems(p).unshift(it);else wbItems(p).push(it);wbTool('sel');wbSave(p,it);wbDraw();wbSelect(id);const e=$('.wb-empty');if(e)e.remove();if(kind!=='frame')wbEditText(p,id);return it}
+function wbDraw(){const p=proj(ui.pid),w=$('#wbw');if(!p||!w)return;const its=wbItems(p),sel=ui.wbSel,ed=wbEd();
+  const hs=t=>ed?(t==='text'?['e','w']:HND).map(h=>'<span class="wb-h h-'+h+'" data-h="'+h+'"></span>').join(''):'';
+  const fr=its.filter(i=>i.t==='frame'),sh=its.filter(i=>i.t==='shape'),nt=its.filter(i=>(i.t==='note'||i.t==='text')&&!i.fin);
+  w.innerHTML=fr.map(i=>'<div class="wbi wf'+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+i.w+'px;height:'+i.h+'px"><div class="wb-t wf-t" dir="auto">'+esc(i.txt||'')+'</div>'+hs('frame')+'</div>').join('')+
+    sh.map(i=>'<div class="wbi wsh sh-'+(i.sh||'rect')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||170)+'px;height:'+(i.h||100)+'px;--sc:'+(SHC[i.c]||SHC.b)+'"><svg class="sh-bg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+(SHP[i.sh]||SHP.rect)+'</svg><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+hs('shape')+'</div>').join('')+
+    nt.map(i=>'<div class="wbi '+(i.t==='note'?'wn'+(i.xck?' xck':''):'wt')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||(i.t==='note'?200:260))+'px;'+(i.t==='note'?'min-height:'+(i.h||130)+'px;background:'+(WBC[i.c]||WBC.y):'font-size:'+(i.fs||22)+'px;color:'+(i.ink||''))+'"><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+(i.t==='note'?wnFoot(p,i):'')+hs(i.t)+'</div>').join('')+
+    '<svg class="wb-svg" id="wbsvg"><defs>'+WINK.concat(['#4B8BF5']).map((c,k)=>'<marker id="wah'+k+'" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="'+c+'"/></marker>').join('')+'</defs></svg><div class="wb-ov" id="wbov"></div>';
+  wbLines();wbApply();wbSelBar();wsideDraw()}
+function wbSelBar(){const b=$('#wbsel'),p=proj(ui.pid);if(!b||!p)return;const it=ui.wbSel&&wbFind(p,ui.wbSel);if(!it||!wbEd()){b.innerHTML='';return}
+  let h=it.t==='note'?Object.keys(WBC).map(k=>'<button type="button" class="wcol'+(it.c===k?' on':'')+'" data-wbc="'+k+'" style="background:'+WBC[k]+'" aria-label="لون"></button>').join(''):
+    it.t==='shape'?Object.keys(SHC).map(k=>'<button type="button" class="wcol'+((it.c||'b')===k?' on':'')+'" data-wbshc="'+k+'" style="background:'+SHC[k]+'" aria-label="لون"></button>').join('')+'<span class="wsep"></span>'+['rect','ell','dia'].map(k=>'<button type="button" class="wtb'+(it.sh===k?' on':'')+'" data-wbsh="'+k+'" aria-label="'+({rect:'مستطيل',ell:'دائرة',dia:'معيّن'}[k])+'"><svg viewBox="0 0 100 100" style="width:16px;height:16px">'+SHP[k]+'</svg></button>').join(''):
+    it.t!=='frame'?WINK.map(c=>'<button type="button" class="wcol ink'+((it.c||it.ink||WINK[0])===c?' on':'')+'" data-wbink="'+c+'" style="background:'+c+'" aria-label="لون"></button>').join(''):'';
+  if(it.t==='text')h+='<button type="button" class="wtb" data-wbfs="-1" aria-label="تصغير الخط">A−</button><button type="button" class="wtb" data-wbfs="1" aria-label="تكبير الخط">A+</button>';
+  if(isLineW(it))h+='<button type="button" class="wtb" data-wbflip title="'+(it.t==='arrow'?'تحويل إلى خط':'تحويل إلى سهم')+'" aria-label="تحويل">'+(it.t==='arrow'?'—':'→')+'</button>';
+  b.innerHTML=h+(isBoxW(it)?'<button type="button" class="wtb" data-wbedit title="تعديل النص (Enter)" aria-label="تعديل النص">'+ic('edit')+'</button><button type="button" class="wtb" data-wbdup title="تكرار (Ctrl+D)" aria-label="تكرار"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3"/></svg></button>':'')+'<button type="button" class="wtb del" data-wbdel title="حذف (Delete)" aria-label="حذف">'+ic('trash')+'</button>'}
+document.addEventListener('click',e=>{const b=e.target.closest('#wbsel [data-wbshc],#wbsel [data-wbsh]');if(!b||!wbEd())return;const p=proj(ui.pid),it=p&&ui.wbSel&&wbFind(p,ui.wbSel);if(!it||it.t!=='shape')return;
+  wbSnap(p);if(b.dataset.wbshc){it.c=b.dataset.wbshc;ui.wbShC=it.c}else it.sh=b.dataset.wbsh;wbSave(p,it);wbDraw()});
+
+/* ---------- آخر المستجدات: ردّ من اللجنة وردّ من الإدارة التنفيذية ---------- */
+const updSide=u=>u.s||'x';
+const wnLast=(i,s)=>{const u=(i.upds||[]).filter(x=>updSide(x)===s);return u.length?u[u.length-1]:null};
+const SIDE={c:'اللجنة',x:'الإدارة التنفيذية'};
+function updBox(u,s,cls){return u?'<div class="'+cls+' s-'+s+'"><b>'+SIDE[s]+'</b><span>'+esc(u.t)+'</span><small>'+esc(shortName(u.u))+' · '+when(u.at)+'</small></div>':''}
+function wnFoot(p,i){const x=isX(p),c=wbEd(),uc=wnLast(i,'c'),ux=wnLast(i,'x'),n=(i.upds||[]).length;
+  const by=i.u&&user(i.u)?'<span class="wb-by" title="'+esc(uname(i.u))+'">'+esc(shortName(i.u))+'</span>':'';
+  return '<div class="wn-f">'+updBox(uc,'c','wn-up')+updBox(ux,'x','wn-up')+
+    '<div class="wn-a">'+(x||c?'<button type="button" class="wn-b" data-a="wnUpd" data-id="'+i.id+'" data-side="'+(c?'c':'x')+'">'+ic('edit')+(c?'ردّ اللجنة':'المستجدات')+'</button>':'')+(n>2||(n>1&&(!uc||!ux))?'<button type="button" class="wn-b" data-a="wnHist" data-id="'+i.id+'" title="كل المستجدات">'+n+'</button>':'')+'<span class="sp"></span>'+by+
+    (x||c?'<button type="button" class="wn-c'+(i.xck?' on':'')+(c?' com':'')+'" data-a="wnChk" data-id="'+i.id+'" title="'+(c?(i.xck?'أنجزتها الإدارة التنفيذية · اضغط لإنهائها ونقلها إلى المنتهية':'إنهاء الملاحظة ونقلها إلى المنتهية'):(i.xck?'إلغاء علامة الإنجاز':'تم: تظهر مشطوبة للجنة'))+'" aria-label="إنجاز">'+ic('check')+'</button>':(i.xck?'<span class="wn-c on" title="أنجزتها الإدارة التنفيذية">'+ic('check')+'</span>':''))+'</div></div>'}
+function wsideHtml(p){const ns=wbItems(p).filter(i=>i.t==='note'),act=ns.filter(i=>!i.fin),fin=ns.filter(i=>i.fin).sort((a,b)=>(b.fin.at||0)-(a.fin.at||0)),tab=ui.wsTab==='fin'?'fin':'act',x=isX(p),c=wbEd();
+  let h='<div class="ws-tabs" role="tablist"><button type="button" role="tab" class="'+(tab==='act'?'on':'')+'" data-a="wsTab" data-v="act">الملاحظات<span class="n">'+act.length+'</span></button><button type="button" role="tab" class="'+(tab==='fin'?'on':'')+'" data-a="wsTab" data-v="fin">المنتهية<span class="n">'+fin.length+'</span></button></div>';
+  const xs=tab==='act'?act.slice().sort((a,b)=>(!!a.xck-!!b.xck)||((b.at||0)-(a.at||0))):fin;
+  if(!xs.length)return h+'<div class="ws-empty">'+(tab==='act'?(c?'ارسم ستيكي نوت على اللوحة، وستظهر هنا كقائمة لا تضيع منها ملاحظة.':'لا ملاحظات من اللجنة بعد.'):'تظهر هنا الملاحظات التي أنهتها اللجنة، محفوظة مع مستجداتها.')+'</div>';
+  return h+'<div class="ws-list">'+xs.map(i=>'<div class="ws-i'+(i.xck&&!i.fin?' xck':'')+(i.fin?' fin':'')+'" style="--nc:'+(WBC[i.c]||WBC.y)+'"><button type="button" class="ws-t'+((i.txt||'').trim()?'':' emp')+'" data-a="'+(i.fin?'wnHist':'wnLoc')+'" data-id="'+i.id+'" title="'+(i.fin?'عرض المستجدات':'إظهارها على اللوحة')+'">'+esc((i.txt||'').trim()||'نوت بلا نص')+'</button>'+
+      updBox(wnLast(i,'c'),'c','ws-up')+updBox(wnLast(i,'x'),'x','ws-up')+
+      '<div class="ws-a">'+(i.fin?'<small>أُنهيت · '+esc(shortName(i.fin.u))+' · '+when(i.fin.at)+'</small><span class="sp"></span>'+(c?'<button type="button" class="btn sm ghost" data-a="wnBack" data-id="'+i.id+'">'+ic('reset')+'إعادة إلى اللوحة</button>':''):
+        (i.xck?'<small class="ok">'+ic('check')+'أنجزتها الإدارة التنفيذية</small>':'<small>'+(i.at?when(i.at):'')+'</small>')+'<span class="sp"></span>'+((x||c)?'<button type="button" class="btn sm ghost" data-a="wnUpd" data-id="'+i.id+'" data-side="'+(c?'c':'x')+'">'+ic('edit')+(c?'ردّ اللجنة':'المستجدات')+'</button><button type="button" class="wn-c'+(i.xck?' on':'')+(c?' com':'')+'" data-a="wnChk" data-id="'+i.id+'" aria-label="إنجاز">'+ic('check')+'</button>':''))+'</div></div>').join('')+'</div>'}
+const updList=us=>us.length?'<div class="uph">'+us.map(u=>'<div class="uph-i s-'+updSide(u)+'"><em>'+SIDE[updSide(u)]+'</em><p>'+esc(u.t)+'</p><small>'+esc(uname(u.u))+' · '+when(u.at)+'</small></div>').join('')+'</div>':'<p class="note-s">لا مستجدات بعد.</p>';
+function wnHistModal(p,i){const us=(i.upds||[]).slice().reverse();modal({title:firstLine(i.txt)||'ملاحظة',submit:'إغلاق',
+  body:'<div class="wn-q" style="background:'+(WBC[i.c]||WBC.y)+'">'+esc(i.txt||'')+'</div><div class="lb" style="margin-top:12px">كل المستجدات · '+us.length+'</div>'+updList(us)+(i.fin?'<p class="note-s">أنهتها اللجنة: '+esc(uname(i.fin.u))+' · '+when(i.fin.at)+'</p>':''),onSubmit:()=>{}})}
+Object.assign(A,{
+  wnUpd:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it)return;const s=wbEd()?'c':isX(p)?'x':null;if(!s)return;const us=(it.upds||[]).slice().reverse(),mine=wnLast(it,s);
+    modal({title:s==='c'?'ردّ اللجنة':'آخر المستجدات',submit:'حفظ',body:'<div class="wn-q" style="background:'+(WBC[it.c]||WBC.y)+'">'+esc(it.txt||'')+'</div><div class="f" style="margin-top:12px"><label for="wu">'+(s==='c'?'ردّ اللجنة على هذه النقطة':'ما الجديد في هذه النقطة؟')+'</label><textarea class="ta" id="wu" name="t" data-req placeholder="'+(s==='c'?'مثال: نحتاج الموافقة قبل الخميس':'مثال: تواصلنا مع الجهة، والموعد يوم الأحد')+'">'+(mine?esc(mine.t):'')+'</textarea><span class="help">يظهر على النوت آخر ردّ من كل طرف، والسابقة محفوظة. للنقاش استخدم محادثة المشروع.</span></div>'+(us.length?'<div class="lb">السابقة</div>'+updList(us.slice(0,6)):''),
+      after:f=>{const t=f.querySelector('#wu');t.select()},
+      onSubmit:v=>{if(mine&&v.t===mine.t)return;it.upds=(it.upds||[]).concat({id:uid('up'),s,t:v.t.slice(0,1000),u:me().id,at:Date.now()});touch(p,'found');
+        const to=s==='c'?[p.managerId].concat(p.staffIds||[]):[p.memberId];notify(to,'bd',(s==='c'?'ردّ اللجنة على: ':'مستجدات على: ')+(firstLine(it.txt)||'نوت'),v.t.slice(0,160),{p:p.id,tab:'found'});save();setTimeout(()=>{if($('#wbw'))wbDraw();else render()},0)}})}
+});
+
+/* ---------- الميزانية: عامة + الموارد البشرية + العمليات + البرامج، مخطط وفعلي لكل شهر ---------- */
+const BK=[['hr','الموارد البشرية'],['ops','العمليات'],['prog','البرامج']];
+const BSUB=[['all','الميزانية العامة']].concat(BK);
+const M2=i=>String(i+1).padStart(2,'0');
+const bCell=(p,y,m)=>(((bud(p).y||{})[y]||{})[m])||{};
+const bSet=(p,y,m)=>{const b=bud(p);b.y=b.y||{};const Y=b.y[y]||(b.y[y]={});return Y[m]||(Y[m]={})};
+const hrAuto=p=>hrTotals(hrList(p)).sf;
+function bPlan(p,y,m,k){const c=bCell(p,y,m),v=c[k];if(v&&v.p!=null)return v.p;return k==='hr'&&(y+'-'+m)>=curMon()?hrAuto(p):0}
+const bIsAuto=(p,y,m,k)=>k==='hr'&&(y+'-'+m)>=curMon()&&!((bCell(p,y,m).hr||{}).p!=null);
+function bAct(p,y,m,k){const c=bCell(p,y,m);if(!c.closed)return null;const v=c[k]||{};return v.a!=null?v.a:bPlan(p,y,m,k)}
+function bState(p,y,m){const c=bCell(p,y,m),ym=y+'-'+m,cm=curMon();return c.closed?'closed':ym<cm?(BK.some(([k])=>(c[k]||{}).p!=null)?'due':'none'):ym===cm?'cur':'plan'}
+const BST={none:['بلا بيانات','plan'],closed:['مُغلق · فعلي','ok'],due:['بانتظار التسكير','due'],cur:['الشهر الحالي · مخطط','cur'],plan:['مخطط','plan']};
+const vari=(pl,ac)=>{const d=pl-ac;return '<span class="bvar '+(d>=0?'sv':'ov')+'" title="'+(d>=0?'وفر':'تجاوز')+'">'+(d>=0?'+':'−')+usd(Math.abs(d))+'</span>'};
+function budYears(p){const ys=new Set([TODAY.slice(0,4)]);Object.keys(bud(p).y||{}).forEach(y=>ys.add(y));return [...ys].sort()}
+function budView(p){const s=BSUB.some(x=>x[0]===ui.bsub)?ui.bsub:'all',y=ui.byr||TODAY.slice(0,4),ys=budYears(p);if(!ys.includes(y))ys.push(y);
+  let h='<div class="bhead"><div class="lsecs" role="tablist">'+BSUB.map(x=>'<button type="button" role="tab" class="'+(s===x[0]?'on':'')+'" aria-selected="'+(s===x[0])+'" data-a="budSub" data-v="'+x[0]+'">'+x[1]+'</button>').join('')+'</div><span class="sp"></span><div class="seg byr" role="group" aria-label="السنة"><button type="button" data-a="budYr" data-v="'+(+y-1)+'" aria-label="السنة السابقة">‹</button><b>'+y+'</b><button type="button" data-a="budYr" data-v="'+(+y+1)+'" aria-label="السنة التالية">›</button></div></div>';
+  return h+(s==='all'?budAll(p,y):budCat(p,y,s))}
+function budTot(p,y){let pl=0,ac=0,plC=0,open=0;for(let i=0;i<12;i++){const m=M2(i),cl=bState(p,y,m)==='closed';BK.forEach(([k])=>{const v=bPlan(p,y,m,k);pl+=v;if(cl){ac+=bAct(p,y,m,k);plC+=v}else open+=v})}return {pl,ac,plC,open}}
+function budAll(p,y){const ed=canBud(),b=bud(p),cap=b.cap||0,T=budTot(p,y);
+  let h='<div class="kpis"><button type="button" class="kp kpbtn" data-a="budCap"'+(ed?'':' disabled')+'><b>'+(cap?usd(cap):'—')+'</b><small>الميزانية المعتمدة'+(b.capNote?' · '+esc(b.capNote):'')+(ed?' · تعديل':'')+'</small></button><div class="kp"><b>'+usd(T.pl)+'</b><small>المخطط لسنة '+y+'</small></div><div class="kp b"><b>'+usd(T.ac)+'</b><small>المصروف الفعلي (الأشهر المغلقة)</small></div><div class="kp'+(cap&&cap-T.ac-T.open<0?' l':' d')+'"><b>'+(cap?usd(cap-T.ac-T.open):'—')+'</b><small>المتبقي بعد الفعلي والمخطط</small></div></div>';
+  if(T.plC)h+='<div class="bnote">الأشهر المغلقة: كان المخطط '+usd(T.plC)+' والفعلي '+usd(T.ac)+' · الفرق '+vari(T.plC,T.ac)+'</div>';
+  if(cap)h+='<div class="capbar2"><i class="a" style="width:'+Math.min(100,T.ac/cap*100)+'%"></i><i class="o" style="width:'+Math.max(0,Math.min(100-T.ac/cap*100,T.open/cap*100))+'%"></i></div><div class="caplg"><span><i class="a"></i>فعلي</span><span><i class="o"></i>مخطط للأشهر المفتوحة</span></div>';
+  /* مخطط شهري: مخطط وفعلي */
+  const rows=[];for(let i=0;i<12;i++){const m=M2(i),st=bState(p,y,m),pl=BK.reduce((a,[k])=>a+bPlan(p,y,m,k),0),ac=st==='closed'?BK.reduce((a,[k])=>a+bAct(p,y,m,k),0):null;rows.push({m,st,pl,ac})}
+  const mx=Math.max(1,...rows.map(r=>Math.max(r.pl,r.ac||0)));
+  h+='<div class="bar-h" style="margin-top:22px"><h2>المخطط والفعلي شهرياً</h2><span class="sp"></span><span class="caplg"><span><i class="pl"></i>مخطط</span><span><i class="a"></i>فعلي</span></span></div><div class="mbars pa">'+rows.map((r,i)=>'<div class="mb'+(r.st==='cur'?' now':'')+'" title="'+esc(MON[i])+': مخطط '+usd(r.pl)+(r.ac!=null?' · فعلي '+usd(r.ac):'')+'"><span class="mb-b2"><i class="pl" style="height:'+Math.round(r.pl/mx*140)+'px"></i><i class="a" style="height:'+Math.round((r.ac||0)/mx*140)+'px"></i></span><span class="mb-l">'+esc(MON[i])+'</span></div>').join('')+'</div>';
+  h+='<div class="bar-h" style="margin-top:22px"><h2>الأشهر</h2><small class="note-s">بالدولار · الأشهر المفتوحة مخطط، والمغلقة فعلي</small></div><div class="tbw"><table class="dtab btab"><thead><tr><th>الشهر</th>'+BK.map(k=>'<th class="nm">'+k[1]+'</th>').join('')+'<th class="nm">المخطط</th><th class="nm">الفعلي</th><th class="nm">الفرق</th><th>الحالة</th>'+(ed?'<th></th>':'')+'</tr></thead><tbody>'+
+    rows.map((r,i)=>'<tr class="st-'+r.st+'"><th scope="row">'+MON[i]+'</th>'+BK.map(([k])=>{const pl=bPlan(p,y,r.m,k);return '<td class="nm">'+(r.st==='closed'?usd(bAct(p,y,r.m,k)):'<span class="pl">'+usd(pl)+'</span>')+'</td>'}).join('')+'<td class="nm">'+usd(r.pl)+'</td><td class="nm">'+(r.ac!=null?'<b>'+usd(r.ac)+'</b>':'—')+'</td><td class="nm">'+(r.ac!=null?vari(r.pl,r.ac):'')+'</td><td><span class="bst '+BST[r.st][1]+'">'+BST[r.st][0]+'</span></td>'+
+      (ed?'<td>'+(r.st==='closed'?(isCom(cur())?'<button class="btn sm ghost" type="button" data-a="budOpen" data-m="'+r.m+'">إعادة فتح</button>':''):'<button class="btn sm'+(r.st==='due'?' primary':' ghost')+'" type="button" data-a="budClose" data-m="'+r.m+'">تسكير</button>')+'</td>':'')+'</tr>').join('')+
+    '</tbody><tfoot><tr><th>السنة</th>'+BK.map(([k])=>'<td class="nm"><b>'+usd(rows.reduce((a,r)=>a+(r.st==='closed'?bAct(p,y,r.m,k):bPlan(p,y,r.m,k)),0))+'</b></td>').join('')+'<td class="nm"><b>'+usd(T.pl)+'</b></td><td class="nm"><b>'+usd(T.ac)+'</b></td><td class="nm">'+(T.plC?vari(T.plC,T.ac):'')+'</td><td></td>'+(ed?'<td></td>':'')+'</tr></tfoot></table></div>';
+  const old=(b.rows||[]).filter(r=>Object.keys(r.v||{}).length);
+  if(old.length){const cs=budCats(p).concat(b.gone||[]);h+='<details class="bold"><summary>مصاريف مسجّلة بالشكل السابق · '+old.length+'</summary><div class="tbw"><table class="dtab"><tbody>'+old.map(r=>'<tr><th>'+esc(monLbl(r.m))+'</th><td>'+Object.keys(r.v).map(k=>{const c=cs.find(x=>x.id===k);return esc(c?c.n:k)+': '+usd(r.v[k])}).join(' · ')+'</td></tr>').join('')+'</tbody></table></div></details>'}
+  return h}
+function budCat(p,y,k){const ed=canBud(),lbl=BK.find(x=>x[0]===k)[1];let pl=0,ac=0,plC=0;
+  let h='<div class="bar-h"><h2>'+lbl+' · '+y+'</h2><small class="note-s">رقم واحد لكل شهر بالدولار</small></div>';
+  if(k==='hr')h+='<div class="bnote">'+ic('flow')+'المخطط يُحسب تلقائياً من رواتب الوظائف المشغولة في الموارد البشرية ('+usd(hrAuto(p))+' شهرياً) ما لم تكتب رقماً آخر.</div>';
+  h+='<div class="tbw"><table class="dtab btab bgrid2"><thead><tr><th>الشهر</th><th class="nm">المخطط</th><th class="nm">الفعلي</th><th class="nm">الفرق</th><th>الحالة</th></tr></thead><tbody>';
+  for(let i=0;i<12;i++){const m=M2(i),st=bState(p,y,m),v=bPlan(p,y,m,k),au=bIsAuto(p,y,m,k),a=st==='closed'?bAct(p,y,m,k):null;pl+=v;if(a!=null){ac+=a;plC+=v}
+    h+='<tr class="st-'+st+'"><th scope="row">'+MON[i]+'</th><td class="nm">'+(ed&&st!=='closed'?'<input class="bcell bpl" inputmode="decimal" dir="ltr" data-y="'+y+'" data-m="'+m+'" data-k="'+k+'" value="'+(au?'':(v||''))+'" placeholder="'+(au?num(v):'0')+'" aria-label="'+lbl+' · '+MON[i]+' · مخطط">'+(au&&v?'<small class="auto">تلقائي</small>':''):usd(v)+(au&&st!=='closed'?' <small class="auto">تلقائي</small>':''))+'</td><td class="nm">'+(a!=null?'<b>'+usd(a)+'</b>':'—')+'</td><td class="nm">'+(a!=null?vari(v,a):'')+'</td><td><span class="bst '+BST[st][1]+'">'+BST[st][0]+'</span></td></tr>'}
+  h+='</tbody><tfoot><tr><th>السنة</th><td class="nm"><b>'+usd(pl)+'</b></td><td class="nm"><b>'+usd(ac)+'</b></td><td class="nm">'+(plC?vari(plC,ac):'')+'</td><td></td></tr></tfoot></table></div>';
+  if(ed)h+='<p class="note-s">اكتب المخطط لكل شهر مفتوح، يُحفظ تلقائياً. الفعلي يُدخل عند «تسكير» الشهر من الميزانية العامة، وبعدها يُقفل الشهر.</p>';
+  return h}
+document.addEventListener('change',e=>{const t=e.target;if(!t.classList||!t.classList.contains('bpl'))return;const p=proj(ui.pid);if(!p||!canBud())return;const y=t.dataset.y,m=t.dataset.m,k=t.dataset.k;if(bCell(p,y,m).closed)return;
+  const c=bSet(p,y,m),raw=String(t.value).trim();c[k]=c[k]||{};if(raw===''&&k==='hr')delete c[k].p;else c[k].p=toNum(raw);c.u=me().id;c.at=Date.now();touch(p,'plan');save();ui.budDirty=true;
+  setTimeout(()=>{const a=document.activeElement;if(!(a&&a.closest&&a.closest('.bgrid2'))){ui.budDirty=false;render()}},0)});
+document.addEventListener('focusout',e=>{if(!ui.budDirty||!e.target.closest||!e.target.closest('.bgrid2'))return;const to=e.relatedTarget;if(to&&to.closest&&to.closest('.bgrid2'))return;setTimeout(()=>{if(ui.budDirty){ui.budDirty=false;render()}},0)});
+document.addEventListener('keydown',e=>{const t=e.target;if(e.key==='Enter'&&t.classList&&t.classList.contains('bpl')){e.preventDefault();e.stopPropagation();const all=[...document.querySelectorAll('.bpl')],nx=all[all.indexOf(t)+1];if(nx){nx.focus();nx.select()}else t.blur()}},true);
+Object.assign(A,{
+  budSub:d=>{ui.bsub=d.v;render()},budYr:d=>{ui.byr=String(d.v);render()},
+  budClose:d=>{const p=proj(ui.pid),y=ui.byr||TODAY.slice(0,4),m=d.m;if(!canBud()||bCell(p,y,m).closed)return;const mi=(+m)-1;
+    modal({title:'تسكير '+MON[mi]+' '+y,submit:'تسكير الشهر',body:'<p class="note-s">اكتب المصروف الفعلي لكل قسم. بعد التسكير يُقفل الشهر، ولا يعيد فتحه إلا عضو لجنة.</p>'+BK.map(([k,l])=>{const pl=bPlan(p,y,m,k);return '<div class="f"><label for="bc'+k+'">'+l+' · <span class="note-s">المخطط '+usd(pl)+'</span></label><input class="fi" id="bc'+k+'" name="'+k+'" inputmode="decimal" dir="ltr" value="'+(((bCell(p,y,m)[k]||{}).a!=null)?bCell(p,y,m)[k].a:pl)+'"></div>'}).join('')+'<div class="f"><label for="bcn2">ملاحظة (اختياري)</label><input class="fi" id="bcn2" name="note" placeholder="سبب الفرق مثلاً"></div>',
+      onSubmit:v=>{const c=bSet(p,y,m);BK.forEach(([k])=>{c[k]=c[k]||{};if(c[k].p==null)c[k].p=bPlan(p,y,m,k);c[k].a=toNum(v[k])});c.note=v.note||'';c.closed={u:me().id,at:Date.now()};touch(p,'plan');save();setTimeout(()=>{render();toast('أُغلق '+MON[mi]+' '+y)},0)}})},
+  budOpen:d=>{const p=proj(ui.pid),y=ui.byr||TODAY.slice(0,4),m=d.m;if(!isCom(cur()))return;confirmBox('إعادة فتح '+MON[(+m)-1],'يعود الشهر مفتوحاً للتعديل، وتبقى الأرقام الفعلية المدخلة محفوظة.','إعادة فتح',()=>{const c=bSet(p,y,m);delete c.closed;touch(p,'plan');save();render()})}
+});
 
 boot();
 })();

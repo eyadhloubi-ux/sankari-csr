@@ -494,7 +494,7 @@ function renderTop(){
   $('#meetBtn').classList.toggle('on',ui.view==='meet'||ui.view==='meetOne');const pi=myPendInv().length;$('#meetN').hidden=!pi;$('#meetN').textContent=pi;
   const nu=nUnread();$('#bellw').innerHTML='<button class="tb bell'+(ui.bell?' on':'')+'" type="button" data-a="bell" aria-label="الإشعارات" aria-expanded="'+!!ui.bell+'"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 004 0"/></svg>'+(nu?'<span class="rb">'+(nu>99?'99+':nu)+'</span>':'')+'</button>'+(ui.bell?bellHtml():'');
   let h='<button type="button" data-a="menu" aria-expanded="'+ui.menu+'"><span class="nm">'+esc(u.name)+'</span>'+av(u.id)+'</button>';
-  if(ui.menu)h+='<div class="menu"><div class="mg">'+(u.admin?'مسؤول النظام · ':'')+(RL[u.role]||'')+'</div><button type="button" data-a="myPw">'+ic('edit')+'تغيير كلمة المرور</button>'+(u.admin||u.role==='member'?'<button type="button" data-a="backup">'+ic('down')+'نسخة احتياطية</button>':'')+(u.admin?'<button type="button" data-a="restore">'+ic('up')+'استيراد نسخة احتياطية</button>'+(SRV.on?'':'<button type="button" data-a="reset">'+ic('reset')+'استعادة البيانات الأولية</button>'):'')+'<hr>'+(isStandalone()?'':'<button type="button" data-a="install">'+ic('down')+'تنزيل التطبيق</button>')+(pushState()==='on'?'':pushState()==='no'?'':'<button type="button" data-a="pushOn">'+ic('alert')+'تفعيل إشعارات الجهاز</button>')+'<hr><button type="button" data-a="logout">'+ic('back')+'تسجيل الخروج</button><div class="note">'+(SRV.on?'البيانات محفوظة على الخادم ومشتركة بين الجميع':'نسخة محلية · البيانات في هذا المتصفح فقط')+'<br>الإصدار 23</div></div>';
+  if(ui.menu)h+='<div class="menu"><div class="mg">'+(u.admin?'مسؤول النظام · ':'')+(RL[u.role]||'')+'</div><button type="button" data-a="myPw">'+ic('edit')+'تغيير كلمة المرور</button>'+(u.admin||u.role==='member'?'<button type="button" data-a="backup">'+ic('down')+'نسخة احتياطية</button>':'')+(u.admin?'<button type="button" data-a="restore">'+ic('up')+'استيراد نسخة احتياطية</button>'+(SRV.on?'':'<button type="button" data-a="reset">'+ic('reset')+'استعادة البيانات الأولية</button>'):'')+'<hr>'+(isStandalone()?'':'<button type="button" data-a="install">'+ic('down')+'تنزيل التطبيق</button>')+(pushState()==='on'?'':pushState()==='no'?'':'<button type="button" data-a="pushOn">'+ic('alert')+'تفعيل إشعارات الجهاز</button>')+'<hr><button type="button" data-a="logout">'+ic('back')+'تسجيل الخروج</button><div class="note">'+(SRV.on?'البيانات محفوظة على الخادم ومشتركة بين الجميع':'نسخة محلية · البيانات في هذا المتصفح فقط')+'<br>الإصدار 24</div></div>';
   $('#uchip').innerHTML=h}
 
 /* auth */
@@ -1647,7 +1647,8 @@ const growAll=()=>document.querySelectorAll('textarea[data-grow]').forEach(growT
  * الترتيب: الإطارات تحت، ثم النوتات والنص، ثم كل الرسوم والخطوط والأسهم فوق الجميع. */
 const WBC={y:'#FFF0A6',o:'#FFDDB8',p:'#FFD3DE',v:'#E4D8FF',b:'#CDE5FF',g:'#D2F0D4'};
 const WINK=['#3A342B','#C62828','#1E5BB8','#1B7A43','#C4510F','#6B3FB0'];
-const wbEd=()=>!!cur()&&(isM()||cur().admin);
+const wbCom=()=>!!cur()&&(isM()||cur().admin);
+const wbEd=()=>wbCom()||wbXEd();
 const isBoxW=i=>i&&(i.t==='note'||i.t==='text'||i.t==='frame'||i.t==='shape');
 const isLineW=i=>i&&(i.t==='arrow'||i.t==='line');
 function wbItems(p){if(!Array.isArray(p.wb))p.wb=wbConvert(p);return p.wb}
@@ -1660,7 +1661,7 @@ const wbFind=(p,id)=>wbItems(p).find(x=>x.id===id);
 /* التراجع والإعادة: لقطة من اللوحة قبل كل تعديل */
 function wbSnap(p){ui.wbU=ui.wbU||{};ui.wbR=ui.wbR||{};const u=ui.wbU[p.id]||(ui.wbU[p.id]=[]);u.push(JSON.stringify(wbItems(p)));if(u.length>50)u.shift();ui.wbR[p.id]=[]}
 function wbUndo(p,redo){ui.wbU=ui.wbU||{};ui.wbR=ui.wbR||{};const from=(redo?ui.wbR:ui.wbU)[p.id]||[],to=(redo?ui.wbU:ui.wbR)[p.id]||((redo?ui.wbU:ui.wbR)[p.id]=[]);
-  if(!from.length){toast(redo?'لا شيء للإعادة':'لا شيء للتراجع');return}to.push(JSON.stringify(wbItems(p)));p.wb=JSON.parse(from.pop());ui.wbSel=null;wbSave(p);wbDraw()}
+  if(!from.length){toast(redo?'لا شيء للإعادة':'لا شيء للتراجع');return}to.push(JSON.stringify(wbItems(p)));p.wb=wbKeepCom(p,JSON.parse(from.pop()));ui.wbSel=null;wbSave(p);wbDraw()}
 function wbView(p){const ed=wbEd(),its=wbItems(p),t=ui.wbt||'sel';
   const S=d=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
   const tb=(k,ico,lb,key)=>'<button type="button" class="wtb'+(t===k?' on':'')+'" data-wbt="'+k+'" title="'+lb+' ('+key+')" aria-label="'+lb+'" aria-pressed="'+(t===k)+'">'+ico+'</button>';
@@ -1684,8 +1685,8 @@ const HND=['nw','n','ne','e','se','s','sw','w'];
 function wbDraw(){const p=proj(ui.pid),w=$('#wbw');if(!p||!w)return;const its=wbItems(p),sel=ui.wbSel,ed=wbEd();
   const hs=t=>ed?(t==='text'?['e','w']:HND).map(h=>'<span class="wb-h h-'+h+'" data-h="'+h+'"></span>').join(''):'';
   const fr=its.filter(i=>i.t==='frame'),nt=its.filter(i=>(i.t==='note'||i.t==='text')&&!i.fin);
-  w.innerHTML=fr.map(i=>'<div class="wbi wf'+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+i.w+'px;height:'+i.h+'px"><div class="wb-t wf-t" dir="auto">'+esc(i.txt||'')+'</div>'+hs('frame')+'</div>').join('')+
-    nt.map(i=>'<div class="wbi '+(i.t==='note'?'wn'+(i.xck?' xck':''):'wt')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||(i.t==='note'?200:260))+'px;'+(i.t==='note'?'min-height:'+(i.h||130)+'px;background:'+(WBC[i.c]||WBC.y)+(i.fs?';font-size:'+i.fs+'px':''):'font-size:'+(i.fs||22)+'px;color:'+(i.ink||''))+'"><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+(i.t==='note'?wnFoot(p,i):'')+hs(i.t)+'</div>').join('')+
+  w.innerHTML=fr.map(i=>'<div class="wbi wf'+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+i.w+'px;height:'+i.h+'px"><div class="wb-t wf-t" dir="auto">'+esc(i.txt||'')+'</div>'+(wbOwn(i)?hs('frame'):'')+'</div>').join('')+
+    nt.map(i=>'<div class="wbi '+(i.t==='note'?'wn'+(i.xck?' xck':''):'wt')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||(i.t==='note'?200:260))+'px;'+(i.t==='note'?'min-height:'+(i.h||130)+'px;background:'+(WBC[i.c]||WBC.y)+(i.fs?';font-size:'+i.fs+'px':''):'font-size:'+(i.fs||22)+'px;color:'+(i.ink||''))+'"><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+(i.t==='note'?wnFoot(p,i):'')+(wbOwn(i)?hs(i.t):'')+'</div>').join('')+
     '<svg class="wb-svg" id="wbsvg"><defs>'+WINK.concat(['#4B8BF5']).map((c,k)=>'<marker id="wah'+k+'" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="'+c+'"/></marker>').join('')+'</defs></svg><div class="wb-ov" id="wbov"></div>';
   wbLines();wbApply();wbSelBar();wsideDraw()}
 const inkIx=c=>Math.max(0,WINK.indexOf(c||WINK[0]));
@@ -1693,7 +1694,7 @@ function wbLines(){const p=proj(ui.pid),svg=$('#wbsvg'),ov=$('#wbov');if(!p||!sv
   its.forEach(i=>{if(i.t==='pen'){const d=penD(i.pts||[]);g+='<path class="wpen'+(sel===i.id?' sel':'')+'" d="'+d+'" stroke="'+(i.c||WINK[0])+'"/>'+(ed?'<path class="whit" data-wid="'+i.id+'" d="'+d+'"/>':'')}
     else if(isLineW(i)){const e=wbEnds(p,i);if(!e)return;const d=ptsD(e.pts),c=i.c||(i.t==='arrow'?'#5B5346':WINK[0]);
       g+='<path class="warr'+(sel===i.id?' sel':'')+'" d="'+d+'" stroke="'+c+'"'+(i.t==='arrow'?' marker-end="url(#wah'+(sel===i.id?WINK.length:inkIx(i.c))+')"':'')+'/>'+(ed?'<path class="whit" data-wid="'+i.id+'" d="'+d+'"/>':'');
-      if(ed&&sel===i.id)o+='<span class="wb-end" data-end="1" data-wid="'+i.id+'" style="left:'+e.a.x+'px;top:'+e.a.y+'px"></span><span class="wb-end" data-end="2" data-wid="'+i.id+'" style="left:'+e.b.x+'px;top:'+e.b.y+'px"></span>'}});
+      if(ed&&sel===i.id&&wbOwn(i))o+='<span class="wb-end" data-end="1" data-wid="'+i.id+'" style="left:'+e.a.x+'px;top:'+e.a.y+'px"></span><span class="wb-end" data-end="2" data-wid="'+i.id+'" style="left:'+e.b.x+'px;top:'+e.b.y+'px"></span>'}});
   const keep=svg.querySelector('defs').outerHTML;svg.innerHTML=keep+g+'<path class="wtmp" id="wbtmp" d=""/>';if(ov)ov.innerHTML=o}
 function wbApply(){const p=proj(ui.pid),vp=$('#wbvp'),w=$('#wbw');if(!p||!vp||!w)return;const v=wbV(p);
   if(v.fit){v.fit=false;wbFit(p,true);return}
@@ -1710,14 +1711,14 @@ function wbSelBar(){const b=$('#wbsel'),p=proj(ui.pid);if(!b||!p)return;const it
   if(it.t==='text')h+='<button type="button" class="wtb" data-wbfs="-1" aria-label="تصغير الخط">A−</button><button type="button" class="wtb" data-wbfs="1" aria-label="تكبير الخط">A+</button>';
   if(isLineW(it))h+='<button type="button" class="wtb" data-wbflip title="'+(it.t==='arrow'?'تحويل إلى خط':'تحويل إلى سهم')+'" aria-label="تحويل">'+(it.t==='arrow'?'—':'→')+'</button>';
   b.innerHTML=h+(isBoxW(it)?'<button type="button" class="wtb" data-wbedit title="تعديل النص (Enter)" aria-label="تعديل النص">'+ic('edit')+'</button><button type="button" class="wtb" data-wbdup title="تكرار (Ctrl+D)" aria-label="تكرار"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h3"/></svg></button>':'')+'<button type="button" class="wtb del" data-wbdel title="حذف (Delete)" aria-label="حذف">'+ic('trash')+'</button>'}
-function wbSave(p,it){if(it){it.u=me().id;it.at=Date.now()}touch(p,'found');save();wsideDraw()}
-function wbSelect(id){ui.wbSel=id;const w=$('#wbw');if(!w)return;w.querySelectorAll('.wbi.sel').forEach(n=>n.classList.remove('sel'));const n=id&&w.querySelector('.wbi[data-wid="'+id+'"]');if(n)n.classList.add('sel');wbLines();wbSelBar()}
-function wbDelete(p,id){const its=wbItems(p),it=its.find(x=>x.id===id);if(!it)return;wbSnap(p);const gone=[it].concat(its.filter(x=>isLineW(x)&&(x.a===id||x.b===id)));p.wb=its.filter(x=>!gone.includes(x));ui.wbSel=null;wbSave(p);wbDraw()}
+function wbSave(p,it){if(it){if(!it.by&&!it.at)it.by=me().id;it.u=me().id;it.at=Date.now()}touch(p,'found');save();wsideDraw()}
+function wbSelect(id){if(id&&!wbOwnId(id))id=null;ui.wbSel=id;const w=$('#wbw');if(!w)return;w.querySelectorAll('.wbi.sel').forEach(n=>n.classList.remove('sel'));const n=id&&w.querySelector('.wbi[data-wid="'+id+'"]');if(n)n.classList.add('sel');wbLines();wbSelBar()}
+function wbDelete(p,id){const its=wbItems(p),it=its.find(x=>x.id===id);if(!it||!wbOwn(it))return;wbSnap(p);const att=its.filter(x=>isLineW(x)&&(x.a===id||x.b===id));wbFreeEnds(p,att.filter(x=>!wbOwn(x)),id);const gone=[it].concat(att.filter(wbOwn));p.wb=its.filter(x=>!gone.includes(x));ui.wbSel=null;wbSave(p);wbDraw()}
 function wbCenter(p){const vp=$('#wbvp'),v=wbV(p);return {x:(vp.clientWidth/2-v.x)/v.z,y:(vp.clientHeight/2-v.y)/v.z}}
 function wbAdd(p,t,at){const c=at||wbCenter(p),its=wbItems(p),n=its.filter(i=>i.t===t).length%6,o=at?0:n*18,id=uid('w');wbSnap(p);
   const it=t==='note'?{id,t,x:Math.round(c.x-100+o),y:Math.round(c.y-65+o),w:200,h:130,c:ui.wbLastC||'y',txt:''}:t==='text'?{id,t,x:Math.round(c.x-130+o),y:Math.round(c.y-20+o),w:260,fs:24,txt:''}:{id,t,x:Math.round(c.x-220),y:Math.round(c.y-150),w:440,h:300,txt:'إطار'};
   if(t==='frame')its.unshift(it);else its.push(it);ui.wbt='sel';wbSave(p,it);wbDraw();wbSelect(id);const e=$('.wb-empty');if(e)e.remove();if(t!=='frame')wbEditText(p,id);return it}
-function wbEditText(p,id){const el=$('#wbw [data-wid="'+id+'"] .wb-t'),it=wbFind(p,id);if(!el||!it||!isBoxW(it)||el.isContentEditable)return;ui.wbBusy=true;const before=JSON.stringify(wbItems(p));el.contentEditable='true';el.classList.add('editing');el.focus({preventScroll:true});
+function wbEditText(p,id){const el=$('#wbw [data-wid="'+id+'"] .wb-t'),it=wbFind(p,id);if(!el||!it||!isBoxW(it)||el.isContentEditable||!wbOwn(it))return;ui.wbBusy=true;const before=JSON.stringify(wbItems(p));el.contentEditable='true';el.classList.add('editing');el.focus({preventScroll:true});
   const r=document.createRange();r.selectNodeContents(el);r.collapse(false);const s=getSelection();s.removeAllRanges();s.addRange(r);
   const fin=()=>{el.removeEventListener('blur',fin);el.contentEditable='false';el.classList.remove('editing');ui.wbBusy=false;const tx=el.innerText.replace(/\n{3,}/g,'\n\n').trim();
     if(!tx&&it.t==='text'){p.wb=wbItems(p).filter(x=>x!==it&&!(isLineW(x)&&(x.a===id||x.b===id)));ui.wbSel=null;wbSave(p);wbDraw();return}
@@ -1727,7 +1728,7 @@ function wbEditText(p,id){const el=$('#wbw [data-wid="'+id+'"] .wb-t'),it=wbFind
 function wbCopy(p,id,cut){const it=wbFind(p,id);if(!it)return;ui.wbClip={items:[JSON.parse(JSON.stringify(it))],n:0};ui.wbClipTxt=it.txt||'';try{if(navigator.clipboard&&it.txt)navigator.clipboard.writeText(it.txt).catch(()=>{})}catch(e){}
   if(cut)wbDelete(p,id);else toast('نُسخ')}
 function wbPaste(p,clip){if(!clip||!clip.items.length)return;clip.n=(clip.n||0)+1;const d=24*clip.n;wbSnap(p);let last=null;
-  clip.items.forEach(src=>{const it=JSON.parse(JSON.stringify(src));it.id=uid('w');delete it.u;delete it.at;
+  clip.items.forEach(src=>{const it=JSON.parse(JSON.stringify(src));it.id=uid('w');delete it.u;delete it.at;delete it.by;delete it.upds;delete it.xck;delete it.fin;delete it.sa;delete it.sb;
     if(isBoxW(it)){it.x+=d;it.y+=d}else if(it.t==='pen')it.pts=it.pts.map(q=>[q[0]+d,q[1]+d]);else if(isLineW(it)){const e=wbEnds(p,src);if(!e)return;it.a=null;it.b=null;it.x1=e.a.x+d;it.y1=e.a.y+d;it.x2=e.b.x+d;it.y2=e.b.y+d}
     if(it.t==='frame')wbItems(p).unshift(it);else wbItems(p).push(it);last=it});
   if(last){wbSave(p,last);wbDraw();wbSelect(last.id)}}
@@ -1743,7 +1744,7 @@ function wbInit(){const vp=$('#wbvp'),p=proj(ui.pid);if(!vp||!p||vp._init)return
   const W=c=>{const r=vp.getBoundingClientRect(),v=wbV(p);return {x:(c.clientX-r.left-v.x)/v.z,y:(c.clientY-r.top-v.y)/v.z}};
   const pts=new Map();let pinch=null;
   vp.addEventListener('wheel',e=>{e.preventDefault();const r=vp.getBoundingClientRect(),v=wbV(p);if(e.ctrlKey||e.metaKey)wbZoomAt(p,Math.exp(-e.deltaY*.0025),e.clientX-r.left,e.clientY-r.top);else{v.x-=e.deltaX;v.y-=e.deltaY;wbApply()}},{passive:false});
-  vp.addEventListener('dblclick',e=>{if(!wbEd()||e.target.closest('[data-a]'))return;const el=e.target.closest('.wbi[data-wid]');if(el){if(!el.classList.contains('wf')||e.target.closest('.wf-t'))wbEditText(p,el.dataset.wid);return}
+  vp.addEventListener('dblclick',e=>{const tg=document.elementFromPoint(e.clientX,e.clientY)||e.target;if(!wbEd()||tg.closest('[data-a]'))return;const el=tg.closest('.wbi[data-wid]');if(el){if(!el.classList.contains('wf')||tg.closest('.wf-t'))wbEditText(p,el.dataset.wid);return}
     if(!e.target.closest('[data-wid]'))wbAdd(p,'note',W(e))});
   vp.addEventListener('pointerdown',e=>{if(e.target.closest('.editing')||e.target.closest('.wbi [data-a]'))return;if(e.pointerType==='mouse'&&e.button!==0)return;vp.focus({preventScroll:true});ui.wbPtr=W(e);
     pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -1754,8 +1755,8 @@ function wbInit(){const vp=$('#wbvp'),p=proj(ui.pid);if(!vp||!p||vp._init)return
     else if(ed&&(t==='arrow'||t==='line'||e.target.closest('[data-port]'))){const pend=e.target.closest('[data-port]')?null:ui.wbPend;act={k:'line',kind:t==='line'?'line':'arrow',a:box&&!box.classList.contains('wf')?box.dataset.wid:null,p:{x:Math.round(q0.x),y:Math.round(q0.y)},pend}}
     else if(ed&&e.target.closest('[data-end]')){const it=wbFind(p,el.dataset.wid);act={k:'end',it,end:e.target.closest('[data-end]').dataset.end,before:JSON.stringify(wbItems(p))}}
     else if(ed&&box&&e.target.closest('[data-h]')){const it=wbFind(p,box.dataset.wid);act={k:'rs',it,h:e.target.closest('[data-h]').dataset.h,o:{x:it.x,y:it.y,w:box.offsetWidth,h:box.offsetHeight},before:JSON.stringify(wbItems(p))}}
-    else if(ed&&el){const it=wbFind(p,el.dataset.wid);if(!it)return;const wasSel=ui.wbSel===it.id;if(!wasSel)wbSelect(it.id);
-      const grp=it.t==='frame'?wbFrameGroup(p,it):[];act={k:'move',it,wasSel,grp:[it].concat(grp).map(x=>({x,o:wbOrig(x)})),before:JSON.stringify(wbItems(p))}}
+    else if(ed&&el&&wbOwnId(el.dataset.wid)){const it=wbFind(p,el.dataset.wid);if(!it)return;const wasSel=ui.wbSel===it.id;if(!wasSel)wbSelect(it.id);
+      const grp=it.t==='frame'?wbFrameGroup(p,it):[];act={k:'move',it,wasSel,grp:[it].concat(grp.filter(wbOwn)).map(x=>({x,o:wbOrig(x)})),before:JSON.stringify(wbItems(p))}}
     else{if(ui.wbSel)wbSelect(null);act={k:'pan',vx:v.x,vy:v.y}}
     e.preventDefault();try{vp.setPointerCapture(e.pointerId)}catch(_){}ui.dragging=true;
     const mv=ev=>{if(!pts.has(ev.pointerId))return;pts.set(ev.pointerId,{x:ev.clientX,y:ev.clientY});
@@ -2002,14 +2003,14 @@ RO_OK.push('csub','hsub','hrMode','hrOpen','wsTab','wnLoc','wnHist','archTog');
 
 /* ---------- لوحة التخطيط: مشتركة مع الإدارة التنفيذية ---------- */
 const wnUpd=i=>{const u=i.upds||[];return u.length?u[u.length-1]:null};
-function wnFoot(p,i){const up=wnUpd(i),x=isX(p),c=wbEd();
+function wnFoot(p,i){const up=wnUpd(i),x=isX(p),c=wbCom();
   const by=i.u&&user(i.u)?'<span class="wb-by" title="'+esc(uname(i.u))+'">'+esc(shortName(i.u))+'</span>':'';
   return '<div class="wn-f">'+(up?'<div class="wn-up"><b>آخر المستجدات</b><span>'+esc(up.t)+'</span><small>'+esc(shortName(up.u))+' · '+when(up.at)+'</small></div>':'')+
     '<div class="wn-a">'+(x?'<button type="button" class="wn-b" data-a="wnUpd" data-id="'+i.id+'">'+ic('edit')+'المستجدات</button>':'')+(up&&(i.upds||[]).length>1?'<button type="button" class="wn-b" data-a="wnHist" data-id="'+i.id+'" title="كل المستجدات">'+(i.upds.length)+'</button>':'')+'<span class="sp"></span>'+by+
     (x||c?'<button type="button" class="wn-c'+(i.xck?' on':'')+(c?' com':'')+'" data-a="wnChk" data-id="'+i.id+'" title="'+(c?(i.xck?'أنجزتها الإدارة التنفيذية · اضغط لإنهائها ونقلها إلى المنتهية':'إنهاء الملاحظة ونقلها إلى المنتهية'):(i.xck?'إلغاء علامة الإنجاز':'تم: تظهر مشطوبة للجنة'))+'" aria-label="إنجاز">'+ic('check')+'</button>':(i.xck?'<span class="wn-c on" title="أنجزتها الإدارة التنفيذية">'+ic('check')+'</span>':''))+'</div></div>'}
 function foundTab(p){return '<div class="plan2"><div class="plan2-b">'+wbView(p)+'</div><aside class="wside" id="wside">'+wsideHtml(p)+'</aside></div>'}
 function wsideDraw(){const p=proj(ui.pid),s=$('#wside');if(p&&s)s.innerHTML=wsideHtml(p)}
-function wsideHtml(p){const ns=wbItems(p).filter(i=>i.t==='note'&&(i.txt||'').trim()),act=ns.filter(i=>!i.fin),fin=ns.filter(i=>i.fin).sort((a,b)=>(b.fin.at||0)-(a.fin.at||0)),tab=ui.wsTab==='fin'?'fin':'act',x=isX(p),c=wbEd();
+function wsideHtml(p){const ns=wbItems(p).filter(i=>i.t==='note'&&(i.txt||'').trim()),act=ns.filter(i=>!i.fin),fin=ns.filter(i=>i.fin).sort((a,b)=>(b.fin.at||0)-(a.fin.at||0)),tab=ui.wsTab==='fin'?'fin':'act',x=isX(p),c=wbCom();
   let h='<div class="ws-tabs" role="tablist"><button type="button" role="tab" class="'+(tab==='act'?'on':'')+'" data-a="wsTab" data-v="act">الملاحظات<span class="n">'+act.length+'</span></button><button type="button" role="tab" class="'+(tab==='fin'?'on':'')+'" data-a="wsTab" data-v="fin">المنتهية<span class="n">'+fin.length+'</span></button></div>';
   const xs=tab==='act'?act.slice().sort((a,b)=>(!!a.xck-!!b.xck)||((b.at||0)-(a.at||0))):fin;
   if(!xs.length)return h+'<div class="ws-empty">'+(tab==='act'?(c?'أضف ستيكي نوت على اللوحة، وستظهر هنا كقائمة لا تضيع منها ملاحظة.':'لا ملاحظات من اللجنة بعد.'):'تظهر هنا الملاحظات التي أنهتها اللجنة، محفوظة مع مستجداتها.')+'</div>';
@@ -2029,9 +2030,9 @@ Object.assign(A,{
     modal({title:'آخر المستجدات',submit:'حفظ',body:'<div class="wn-q" style="background:'+(WBC[it.c]||WBC.y)+'">'+esc(it.txt||'')+'</div><div class="f" style="margin-top:12px"><label for="wu">ما الجديد في هذه النقطة؟</label><textarea class="ta" id="wu" name="t" data-req placeholder="مثال: تواصلنا مع الجهة، والموعد يوم الأحد"></textarea><span class="help">تظهر على الستيكي نوت للجنة. للنقاش استخدم محادثة المشروع.</span></div>'+(us.length?'<div class="lb">السابقة</div><div class="uph">'+us.slice(0,5).map(u=>'<div class="uph-i"><p>'+esc(u.t)+'</p><small>'+esc(uname(u.u))+' · '+when(u.at)+'</small></div>').join('')+'</div>':''),
       onSubmit:v=>{it.upds=(it.upds||[]).concat({id:uid('up'),t:v.t.slice(0,1000),u:me().id,at:Date.now()});touch(p,'found');notify([p.memberId],'bd','مستجدات على: '+firstLine(it.txt),v.t.slice(0,160),{p:p.id,tab:'found'});save();setTimeout(()=>{if($('#wbw'))wbDraw();else render()},0)}})},
   wnChk:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it)return;
-    if(wbEd()){const prev={xck:it.xck||null};it.fin={u:me().id,at:Date.now()};touch(p,'found');save();wbDraw();toast('انتقلت إلى الملاحظات المنتهية',null,()=>{delete it.fin;it.xck=prev.xck;save();wbDraw()});return}
+    if(wbCom()){const prev={xck:it.xck||null};it.fin={u:me().id,at:Date.now()};touch(p,'found');save();wbDraw();toast('انتقلت إلى الملاحظات المنتهية',null,()=>{delete it.fin;it.xck=prev.xck;save();wbDraw()});return}
     if(!isX(p))return;if(it.xck)it.xck=null;else{it.xck={u:me().id,at:Date.now()};notify([p.memberId],'bd','أُنجزت: '+firstLine(it.txt),shortName(me().id)+' · '+p.name,{p:p.id,tab:'found'})}touch(p,'found');save();wbDraw()},
-  wnBack:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it||!wbEd())return;delete it.fin;it.xck=null;touch(p,'found');save();ui.wsTab='act';wbDraw();setTimeout(()=>A.wnLoc({id:it.id}),50);toast('عادت إلى اللوحة')}
+  wnBack:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it||!wbCom())return;delete it.fin;it.xck=null;touch(p,'found');save();ui.wsTab='act';wbDraw();setTimeout(()=>A.wnLoc({id:it.id}),50);toast('عادت إلى اللوحة')}
 });
 
 /* ---------- الإدارة التنفيذية: الملفات والمهام تضيفها الإدارة التنفيذية فقط، دون محادثات ---------- */
@@ -2102,9 +2103,9 @@ function wbMake(p,kind,a,b,moved){const D0={note:[200,130],frame:[440,300],rect:
 function wbDraw(){const p=proj(ui.pid),w=$('#wbw');if(!p||!w)return;const its=wbItems(p),sel=ui.wbSel,ed=wbEd();
   const hs=t=>ed?(t==='text'?['e','w']:HND).map(h=>'<span class="wb-h h-'+h+'" data-h="'+h+'"></span>').join('')+portsH(t):'';
   const fr=its.filter(i=>i.t==='frame'),sh=its.filter(i=>i.t==='shape'),nt=its.filter(i=>(i.t==='note'||i.t==='text')&&!i.fin);
-  w.innerHTML=fr.map(i=>'<div class="wbi wf'+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+i.w+'px;height:'+i.h+'px"><div class="wb-t wf-t" dir="auto">'+esc(i.txt||'')+'</div>'+hs('frame')+'</div>').join('')+
-    sh.map(i=>'<div class="wbi wsh sh-'+(i.sh||'rect')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||170)+'px;height:'+(i.h||100)+'px;--sc:'+(SHC[i.c]||SHC.b)+(i.fs?';font-size:'+i.fs+'px':'')+'"><svg class="sh-bg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+(SHP[i.sh]||SHP.rect)+'</svg><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+hs('shape')+'</div>').join('')+
-    nt.map(i=>'<div class="wbi '+(i.t==='note'?'wn'+(i.xck?' xck':''):'wt')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||(i.t==='note'?200:260))+'px;'+(i.t==='note'?'min-height:'+(i.h||130)+'px;background:'+(WBC[i.c]||WBC.y)+(i.fs?';font-size:'+i.fs+'px':''):'font-size:'+(i.fs||22)+'px;color:'+(i.ink||''))+'"><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+(i.t==='note'?wnFoot(p,i):'')+hs(i.t)+'</div>').join('')+
+  w.innerHTML=fr.map(i=>'<div class="wbi wf'+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+i.w+'px;height:'+i.h+'px"><div class="wb-t wf-t" dir="auto">'+esc(i.txt||'')+'</div>'+(wbOwn(i)?hs('frame'):'')+'</div>').join('')+
+    sh.map(i=>'<div class="wbi wsh sh-'+(i.sh||'rect')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||170)+'px;height:'+(i.h||100)+'px;--sc:'+(SHC[i.c]||SHC.b)+(i.fs?';font-size:'+i.fs+'px':'')+'"><svg class="sh-bg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+(SHP[i.sh]||SHP.rect)+'</svg><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+(wbOwn(i)?hs('shape'):'')+'</div>').join('')+
+    nt.map(i=>'<div class="wbi '+(i.t==='note'?'wn'+(i.xck?' xck':''):'wt')+(sel===i.id?' sel':'')+'" data-wid="'+i.id+'" style="left:'+i.x+'px;top:'+i.y+'px;width:'+(i.w||(i.t==='note'?200:260))+'px;'+(i.t==='note'?'min-height:'+(i.h||130)+'px;background:'+(WBC[i.c]||WBC.y)+(i.fs?';font-size:'+i.fs+'px':''):'font-size:'+(i.fs||22)+'px;color:'+(i.ink||''))+'"><div class="wb-t" dir="auto">'+esc(i.txt||'')+'</div>'+(i.t==='note'?wnFoot(p,i):'')+(wbOwn(i)?hs(i.t):'')+'</div>').join('')+
     '<svg class="wb-svg" id="wbsvg"><defs>'+WINK.concat(['#4B8BF5']).map((c,k)=>'<marker id="wah'+k+'" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="'+c+'"/></marker>').join('')+'</defs></svg><div class="wb-ov" id="wbov"></div>';
   wbLines();wbApply();wbSelBar();wsideDraw()}
 function wbSelBar(){const b=$('#wbsel'),p=proj(ui.pid);if(!b||!p)return;const it=ui.wbSel&&wbFind(p,ui.wbSel);if(!it||!wbEd()){b.innerHTML='';return}
@@ -2122,12 +2123,12 @@ const updSide=u=>u.s||'x';
 const wnLast=(i,s)=>{const u=(i.upds||[]).filter(x=>updSide(x)===s);return u.length?u[u.length-1]:null};
 const SIDE={c:'اللجنة',x:'الإدارة التنفيذية'};
 function updBox(u,s,cls){return u?'<div class="'+cls+' s-'+s+'"><b>'+SIDE[s]+'</b><span>'+esc(u.t)+'</span><small>'+esc(shortName(u.u))+' · '+when(u.at)+'</small></div>':''}
-function wnFoot(p,i){const x=isX(p),c=wbEd(),uc=wnLast(i,'c'),ux=wnLast(i,'x'),n=(i.upds||[]).length;
+function wnFoot(p,i){const x=isX(p),c=wbCom(),uc=wnLast(i,'c'),ux=wnLast(i,'x'),n=(i.upds||[]).length;
   const by=i.u&&user(i.u)?'<span class="wb-by" title="'+esc(uname(i.u))+'">'+esc(shortName(i.u))+'</span>':'';
   return '<div class="wn-f">'+updPair(i,'wn-up')+
     '<div class="wn-a">'+(x||c?'<button type="button" class="wn-b" data-a="wnUpd" data-id="'+i.id+'" data-side="'+(c?'c':'x')+'">'+ic('edit')+(c?'ردّ اللجنة':'المستجدات')+'</button>':'')+(n>2||(n>1&&(!uc||!ux))?'<button type="button" class="wn-b" data-a="wnHist" data-id="'+i.id+'" title="كل المستجدات">'+n+'</button>':'')+'<span class="sp"></span>'+by+
     (x||c?'<button type="button" class="wn-c'+(i.xck?' on':'')+(c?' com':'')+'" data-a="wnChk" data-id="'+i.id+'" title="'+(c?(i.xck?'أنجزتها الإدارة التنفيذية · اضغط لإنهائها ونقلها إلى المنتهية':'إنهاء الملاحظة ونقلها إلى المنتهية'):(i.xck?'إلغاء علامة الإنجاز':'تم: تظهر مشطوبة للجنة'))+'" aria-label="إنجاز">'+ic('check')+'</button>':(i.xck?'<span class="wn-c on" title="أنجزتها الإدارة التنفيذية">'+ic('check')+'</span>':''))+'</div></div>'}
-function wsideHtml(p){const ns=wbItems(p).filter(i=>i.t==='note'),act=ns.filter(i=>!i.fin),fin=ns.filter(i=>i.fin).sort((a,b)=>(b.fin.at||0)-(a.fin.at||0)),tab=ui.wsTab==='fin'?'fin':'act',x=isX(p),c=wbEd();
+function wsideHtml(p){const ns=wbItems(p).filter(i=>i.t==='note'),act=ns.filter(i=>!i.fin),fin=ns.filter(i=>i.fin).sort((a,b)=>(b.fin.at||0)-(a.fin.at||0)),tab=ui.wsTab==='fin'?'fin':'act',x=isX(p),c=wbCom();
   let h='<div class="ws-tabs" role="tablist"><button type="button" role="tab" class="'+(tab==='act'?'on':'')+'" data-a="wsTab" data-v="act">الملاحظات<span class="n">'+act.length+'</span></button><button type="button" role="tab" class="'+(tab==='fin'?'on':'')+'" data-a="wsTab" data-v="fin">المنتهية<span class="n">'+fin.length+'</span></button></div>';
   const xs=tab==='act'?act.slice().sort((a,b)=>(!!a.xck-!!b.xck)||((b.at||0)-(a.at||0))):fin;
   if(!xs.length)return h+'<div class="ws-empty">'+(tab==='act'?(c?'ارسم ستيكي نوت على اللوحة، وستظهر هنا كقائمة لا تضيع منها ملاحظة.':'لا ملاحظات من اللجنة بعد.'):'تظهر هنا الملاحظات التي أنهتها اللجنة، محفوظة مع مستجداتها.')+'</div>';
@@ -2139,7 +2140,7 @@ const updList=us=>us.length?'<div class="uph">'+us.map(u=>'<div class="uph-i s-'
 function wnHistModal(p,i){const us=(i.upds||[]).slice().reverse();modal({title:firstLine(i.txt)||'ملاحظة',submit:'إغلاق',
   body:'<div class="wn-q" style="background:'+(WBC[i.c]||WBC.y)+'">'+esc(i.txt||'')+'</div><div class="lb" style="margin-top:12px">كل المستجدات · '+us.length+'</div>'+updList(us)+(i.fin?'<p class="note-s">أنهتها اللجنة: '+esc(uname(i.fin.u))+' · '+when(i.fin.at)+'</p>':''),onSubmit:()=>{}})}
 Object.assign(A,{
-  wnUpd:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it)return;const s=wbEd()?'c':isX(p)?'x':null;if(!s)return;const us=(it.upds||[]).slice().reverse(),mine=wnLast(it,s);
+  wnUpd:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it)return;const s=wbCom()?'c':isX(p)?'x':null;if(!s)return;const us=(it.upds||[]).slice().reverse(),mine=wnLast(it,s);
     modal({title:s==='c'?'ردّ اللجنة':'آخر المستجدات',submit:'حفظ',body:'<div class="wn-q" style="background:'+(WBC[it.c]||WBC.y)+'">'+esc(it.txt||'')+'</div><div class="f" style="margin-top:12px"><label for="wu">'+(s==='c'?'ردّ اللجنة على هذه النقطة':'ما الجديد في هذه النقطة؟')+'</label><textarea class="ta" id="wu" name="t" data-req placeholder="'+(s==='c'?'مثال: نحتاج الموافقة قبل الخميس':'مثال: تواصلنا مع الجهة، والموعد يوم الأحد')+'">'+(mine?esc(mine.t):'')+'</textarea><span class="help">يظهر على النوت آخر ردّ من كل طرف، والسابقة محفوظة. للنقاش استخدم محادثة المشروع.</span></div>'+(us.length?'<div class="lb">السابقة</div>'+updList(us.slice(0,6)):''),
       after:f=>{const t=f.querySelector('#wu');t.select()},
       onSubmit:v=>{if(mine&&v.t===mine.t)return;it.upds=(it.upds||[]).concat({id:uid('up'),s,t:v.t.slice(0,1000),u:me().id,at:Date.now()});touch(p,'found');
@@ -2226,22 +2227,22 @@ const portsH=t=>t==='text'||t==='frame'?'':['t','b','l','r'].map(s=>'<span class
 /* ---------- الشطب ثم المنتهية، وخيارات كاملة للمنتهية ---------- */
 Object.assign(A,{
   wnChk:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it)return;
-    if(wbEd()){if(!it.xck){it.xck={u:me().id,at:Date.now()};touch(p,'found');save();wbDraw();toast('شُطبت · اضغط مرة ثانية لنقلها إلى المنتهية');return}
+    if(wbCom()){if(!it.xck){it.xck={u:me().id,at:Date.now()};touch(p,'found');save();wbDraw();toast('شُطبت · اضغط مرة ثانية لنقلها إلى المنتهية');return}
       const prev=it.xck;it.fin={u:me().id,at:Date.now()};touch(p,'found');save();wbDraw();toast('انتقلت إلى الملاحظات المنتهية',null,()=>{delete it.fin;it.xck=prev;save();wbDraw()});return}
     if(!isX(p))return;if(it.xck)it.xck=null;else{it.xck={u:me().id,at:Date.now()};notify([p.memberId],'bd','أُنجزت: '+(firstLine(it.txt)||'نوت'),shortName(me().id)+' · '+p.name,{p:p.id,tab:'found'})}touch(p,'found');save();wbDraw()},
-  wnUnx:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it||!(wbEd()||isX(p)))return;it.xck=null;touch(p,'found');save();wbDraw();toast('أُلغي الشطب')},
-  wnDel:d=>{const p=proj(ui.pid),its=wbItems(p),it=its.find(x=>x.id===d.id);if(!it||!wbEd())return;
+  wnUnx:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it||!(wbCom()||isX(p)))return;it.xck=null;touch(p,'found');save();wbDraw();toast('أُلغي الشطب')},
+  wnDel:d=>{const p=proj(ui.pid),its=wbItems(p),it=its.find(x=>x.id===d.id);if(!it||!wbCom())return;
     confirmBox('حذف الملاحظة نهائياً','ستُحذف «'+(firstLine(it.txt)||'نوت')+'» مع كل مستجداتها، ولن تعود إلى اللوحة.','حذف نهائي',()=>{const i=its.indexOf(it),ls=its.filter(x=>isLineW(x)&&(x.a===it.id||x.b===it.id));p.wb=its.filter(x=>x!==it&&!ls.includes(x));touch(p,'found');save();wsideDraw();
       toast('حُذفت الملاحظة',null,()=>{const cur2=wbItems(p);cur2.splice(Math.min(i,cur2.length),0,it);ls.forEach(l=>cur2.push(l));save();wbDraw()})})},
   wnCopy:d=>{const p=proj(ui.pid),it=wbFind(p,d.id);if(!it)return;try{navigator.clipboard.writeText(it.txt||'').then(()=>toast('نُسخ النص')).catch(()=>toast('تعذّر النسخ','error'))}catch(e){toast('تعذّر النسخ','error')}}
 });
-function wnFoot(p,i){const x=isX(p),c=wbEd(),uc=wnLast(i,'c'),ux=wnLast(i,'x'),n=(i.upds||[]).length;
+function wnFoot(p,i){const x=isX(p),c=wbCom(),uc=wnLast(i,'c'),ux=wnLast(i,'x'),n=(i.upds||[]).length;
   const by=i.u&&user(i.u)?'<span class="wb-by" title="'+esc(uname(i.u))+'">'+esc(shortName(i.u))+'</span>':'';
   const tt=c?(i.xck?'مشطوبة · اضغط لنقلها إلى المنتهية':'شطب الملاحظة'):(i.xck?'إلغاء الشطب':'تم: تظهر مشطوبة للجنة');
   return '<div class="wn-f">'+updPair(i,'wn-up')+
     '<div class="wn-a">'+(x||c?'<button type="button" class="wn-b" data-a="wnUpd" data-id="'+i.id+'">'+ic('edit')+(c?'ردّ اللجنة':'المستجدات')+'</button>':'')+(n>2||(n>1&&(!uc||!ux))?'<button type="button" class="wn-b" data-a="wnHist" data-id="'+i.id+'" title="كل المستجدات">'+n+'</button>':'')+'<span class="sp"></span>'+by+
     (x||c?'<button type="button" class="wn-c'+(i.xck?' on':'')+(c&&i.xck?' com fin2':'')+'" data-a="wnChk" data-id="'+i.id+'" title="'+tt+'" aria-label="'+tt+'">'+(c&&i.xck?ic('fwd'):ic('check'))+'</button>':(i.xck?'<span class="wn-c on" title="مشطوبة">'+ic('check')+'</span>':''))+'</div></div>'}
-function wsideHtml(p){const ns=wbItems(p).filter(i=>i.t==='note'),act=ns.filter(i=>!i.fin),fin=ns.filter(i=>i.fin).sort((a,b)=>(b.fin.at||0)-(a.fin.at||0)),tab=ui.wsTab==='fin'?'fin':'act',x=isX(p),c=wbEd();
+function wsideHtml(p){const ns=wbItems(p).filter(i=>i.t==='note'),act=ns.filter(i=>!i.fin),fin=ns.filter(i=>i.fin).sort((a,b)=>(b.fin.at||0)-(a.fin.at||0)),tab=ui.wsTab==='fin'?'fin':'act',x=isX(p),c=wbCom();
   let h='<div class="ws-tabs" role="tablist"><button type="button" role="tab" class="'+(tab==='act'?'on':'')+'" data-a="wsTab" data-v="act">الملاحظات<span class="n">'+act.length+'</span></button><button type="button" role="tab" class="'+(tab==='fin'?'on':'')+'" data-a="wsTab" data-v="fin">المنتهية<span class="n">'+fin.length+'</span></button></div>';
   const xs=tab==='act'?act.slice().sort((a,b)=>(!!a.xck-!!b.xck)||((b.at||0)-(a.at||0))):fin;
   if(!xs.length)return h+'<div class="ws-empty">'+(tab==='act'?(c?'ارسم ستيكي نوت على اللوحة، وستظهر هنا كقائمة لا تضيع منها ملاحظة.':'لا ملاحظات من اللجنة بعد.'):'تظهر هنا الملاحظات التي أنهتها اللجنة، محفوظة مع مستجداتها.')+'</div>';
@@ -2258,6 +2259,19 @@ function budView(p){return '<div class="empty soon"><span class="e">'+ic('table'
 
 /* ===================== الإصدار 23: المدير التنفيذي والأعضاء التنفيذيون الذين أُعطوا بطاقة المشروع يعدّلونها ===================== */
 function cardX(p){p=p||proj(ui.pid);const u=cur();return !!(p&&u&&['manager','staff'].includes(u.role)&&!isRO()&&permOf(u,p).plan&&(p.managerId===u.id||(p.staffIds||[]).includes(u.id)))}
+
+/* ===================== الإصدار 24: الإدارة التنفيذية تضيف على لوحة التخطيط، ولا يحذف ما وضعته اللجنة إلا اللجنة ===================== */
+/* محرّر تنفيذي: المدير التنفيذي أو العضو التنفيذي المرتبط بالمشروع ومعه وصول للوحة */
+function wbXEd(){const p=proj(ui.pid),u=cur();return !!(p&&u&&['manager','staff'].includes(u.role)&&!isRO()&&permOf(u,p).found&&(p.managerId===u.id||(p.staffIds||[]).includes(u.id)))}
+/* عنصر اللجنة: بلا صاحب (قديم) أو صاحبه عضو لجنة. اللجنة تعدّل وتحذف كل شيء، والإدارة التنفيذية عناصرها فقط */
+const wbIsCom=it=>!it.by||isCom(user(it.by));
+function wbOwn(it){return !!it&&(wbCom()||(wbEd()&&!wbIsCom(it)))}
+function wbOwnId(id){const p=proj(ui.pid);return wbOwn(p&&wbFind(p,id))}
+/* تراجع الإدارة التنفيذية لا يمسّ عناصر اللجنة */
+function wbKeepCom(p,snap){if(wbCom())return snap;const cur2=wbItems(p),out=[];snap.forEach(x=>{if(!wbIsCom(x))out.push(x);else{const c=cur2.find(y=>y.id===x.id);if(c)out.push(c)}});
+  cur2.forEach(c=>{if(wbIsCom(c)&&!out.some(y=>y.id===c.id))out.push(c)});return out}
+/* حذف عنصر تنفيذي يترك أسهم اللجنة المتصلة به حرّة في مكانها */
+function wbFreeEnds(p,lines,id){lines.forEach(l=>{const e=wbEnds(p,l);if(!e)return;if(l.a===id){l.a=null;delete l.sa;l.x1=Math.round(e.a.x);l.y1=Math.round(e.a.y)}if(l.b===id){l.b=null;delete l.sb;l.x2=Math.round(e.b.x);l.y2=Math.round(e.b.y)}})}
 
 boot();
 })();
